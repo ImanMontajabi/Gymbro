@@ -1,14 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
-import { usePersistedState } from './hooks/usePersistedState'
+import { supabase } from './supabase'
 import { findPreviousExercise, formatSessionDate } from './utils/history'
 import { playRestCompleteChime } from './utils/audio'
 import { sanitizeNumericInput } from './utils/numbers'
-
-const STORAGE_KEYS = {
-  routines: 'gymbro_routines',
-  history: 'gymbro_history',
-  activeSession: 'gymbro_active_session',
-}
 
 const EMPTY_DRAFT = { weight: '', reps: '', note: '' }
 
@@ -16,6 +10,31 @@ function formatTime(totalSeconds) {
   const m = Math.floor(totalSeconds / 60)
   const s = totalSeconds % 60
   return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
+}
+
+// Maps a `routines` row (with its nested `exercises` rows, snake_case
+// columns) to the shape the rest of the app works with.
+function mapRoutineRow(row) {
+  return {
+    id: row.id,
+    name: row.name,
+    exercises: (row.exercises ?? [])
+      .slice()
+      .sort((a, b) => new Date(a.created_at) - new Date(b.created_at))
+      .map((ex) => ({ id: ex.id, name: ex.name, restTime: ex.rest_time })),
+  }
+}
+
+// Maps a `sessions` row to the shape used for both activeSession and
+// history entries — `exercises` is already stored as JSONB in this shape.
+function mapSessionRow(row) {
+  return {
+    id: row.id,
+    routineId: row.routine_id,
+    routineName: row.routine_name,
+    date: row.date,
+    exercises: row.exercises ?? [],
+  }
 }
 
 // Google Material Symbols (Outlined). `name` is any valid symbol name, e.g.
@@ -129,10 +148,10 @@ function ExerciseEditRow({ initialName, initialRestTime, onSave, onCancel }) {
   )
 }
 
-// Settings popup — centered modal with a dimmed backdrop. Currently just
-// houses the destructive "Clear All Data" action, kept out of the main
-// header so it can't be tapped by accident.
-function SettingsModal({ onClose, onClearData }) {
+// Settings popup — centered modal with a dimmed backdrop. Houses the
+// destructive "Clear All Data" action and sign-out, kept out of the main
+// header so they can't be tapped by accident.
+function SettingsModal({ onClose, onClearData, onLogout, userEmail }) {
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
@@ -154,24 +173,161 @@ function SettingsModal({ onClose, onClearData }) {
           </button>
         </div>
 
+        {userEmail && (
+          <p
+            dir="ltr"
+            className="mb-4 truncate text-right text-sm text-gray-500 dark:text-gray-400"
+          >
+            {userEmail}
+          </p>
+        )}
+
+        <div className="flex flex-col gap-3">
+          <button
+            type="button"
+            onClick={onClearData}
+            className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-red-500 py-3.5 text-base font-bold text-red-500 transition active:scale-95 dark:border-red-500/70 dark:text-red-400"
+          >
+            <Icon name="delete_forever" className="text-[20px]" />
+            پاک کردن تمام اطلاعات
+          </button>
+
+          <button
+            type="button"
+            onClick={onLogout}
+            className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-gray-300 py-3.5 text-base font-bold text-gray-600 transition active:scale-95 dark:border-gray-700 dark:text-gray-300"
+          >
+            <Icon name="logout" className="text-[20px]" />
+            خروج
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// Email/password sign-in + sign-up screen, shown whenever there's no
+// authenticated Supabase session.
+function AuthScreen() {
+  const [mode, setMode] = useState('login') // 'login' | 'signup'
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [error, setError] = useState('')
+  const [notice, setNotice] = useState('')
+  const [loading, setLoading] = useState(false)
+
+  async function handleSubmit(e) {
+    e.preventDefault()
+    setError('')
+    setNotice('')
+    setLoading(true)
+
+    const { error: authError } =
+      mode === 'login'
+        ? await supabase.auth.signInWithPassword({ email, password })
+        : await supabase.auth.signUp({ email, password })
+
+    setLoading(false)
+
+    if (authError) {
+      setError(authError.message)
+      return
+    }
+    if (mode === 'signup') {
+      setNotice('ثبت‌نام انجام شد. ایمیل خود را برای تایید حساب بررسی کنید.')
+    }
+  }
+
+  function toggleMode() {
+    setMode((m) => (m === 'login' ? 'signup' : 'login'))
+    setError('')
+    setNotice('')
+  }
+
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4 text-gray-900 dark:bg-gray-950 dark:text-gray-100">
+      <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-sm dark:bg-gray-900">
+        <h1 className="mb-1 text-center text-2xl font-bold">جیم برو</h1>
+        <p className="mb-6 text-center text-sm text-gray-500 dark:text-gray-400">
+          {mode === 'login' ? 'وارد حساب کاربری خود شوید' : 'ایجاد حساب کاربری جدید'}
+        </p>
+
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+          <div className="flex flex-col gap-2">
+            <label htmlFor="email" className="text-sm font-medium text-gray-600 dark:text-gray-400">
+              ایمیل
+            </label>
+            <input
+              id="email"
+              type="email"
+              dir="ltr"
+              required
+              autoComplete="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="rounded-xl border border-gray-300 bg-gray-50 px-4 py-3.5 text-base text-gray-900 placeholder-gray-400 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
+            />
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <label
+              htmlFor="password"
+              className="text-sm font-medium text-gray-600 dark:text-gray-400"
+            >
+              رمز عبور
+            </label>
+            <input
+              id="password"
+              type="password"
+              dir="ltr"
+              required
+              minLength={6}
+              autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="rounded-xl border border-gray-300 bg-gray-50 px-4 py-3.5 text-base text-gray-900 placeholder-gray-400 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
+            />
+          </div>
+
+          {error && <p className="text-sm text-red-500">{error}</p>}
+          {notice && <p className="text-sm text-green-600 dark:text-green-400">{notice}</p>}
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="mt-2 rounded-xl bg-purple-600 py-4 text-lg font-bold text-white transition disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {loading ? '...' : mode === 'login' ? 'ورود' : 'ثبت‌نام'}
+          </button>
+        </form>
+
         <button
           type="button"
-          onClick={onClearData}
-          className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-red-500 py-3.5 text-base font-bold text-red-500 transition active:scale-95 dark:border-red-500/70 dark:text-red-400"
+          onClick={toggleMode}
+          className="mt-4 w-full text-center text-sm font-medium text-purple-600 dark:text-purple-400"
         >
-          <Icon name="delete_forever" className="text-[20px]" />
-          پاک کردن تمام اطلاعات
+          {mode === 'login' ? 'حساب کاربری ندارید؟ ثبت‌نام کنید' : 'قبلاً ثبت‌نام کرده‌اید؟ وارد شوید'}
         </button>
       </div>
     </div>
   )
 }
 
+function LoadingScreen() {
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-gray-50 text-gray-500 dark:bg-gray-950 dark:text-gray-400">
+      در حال بارگذاری...
+    </div>
+  )
+}
+
 function App() {
+  const [authSession, setAuthSession] = useState(undefined) // undefined = checking, null = logged out
   const [isDark, setIsDark] = useState(true)
-  const [routines, setRoutines] = usePersistedState(STORAGE_KEYS.routines, [])
-  const [history, setHistory] = usePersistedState(STORAGE_KEYS.history, [])
-  const [activeSession, setActiveSession] = usePersistedState(STORAGE_KEYS.activeSession, null)
+  const [routines, setRoutines] = useState([])
+  const [history, setHistory] = useState([])
+  const [activeSession, setActiveSession] = useState(null)
+  const [dataLoading, setDataLoading] = useState(true)
   const [drafts, setDrafts] = useState({}) // { [exerciseId]: { weight, reps, note } }
 
   const [editingRoutineId, setEditingRoutineId] = useState(null)
@@ -186,9 +342,66 @@ function App() {
   const [activeTimer, setActiveTimer] = useState(null) // { exerciseId, duration, endTime }
   const [remaining, setRemaining] = useState(0)
 
+  const user = authSession?.user ?? null
+
   useEffect(() => {
     document.documentElement.classList.toggle('dark', isDark)
   }, [isDark])
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => setAuthSession(data.session))
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, newSession) => {
+      setAuthSession(newSession)
+    })
+    return () => subscription.unsubscribe()
+  }, [])
+
+  // Load everything from Supabase once we know who's signed in.
+  useEffect(() => {
+    if (!user) {
+      setRoutines([])
+      setHistory([])
+      setActiveSession(null)
+      setDataLoading(false)
+      return
+    }
+
+    let cancelled = false
+    setDataLoading(true)
+
+    async function loadData() {
+      const [routinesRes, activeRes, historyRes] = await Promise.all([
+        supabase
+          .from('routines')
+          .select('id, name, exercises(id, name, rest_time, created_at)')
+          .order('created_at'),
+        supabase.from('sessions').select('*').eq('status', 'active').maybeSingle(),
+        supabase
+          .from('sessions')
+          .select('*')
+          .eq('status', 'completed')
+          .order('date', { ascending: false }),
+      ])
+
+      if (cancelled) return
+
+      if (routinesRes.error) console.error(routinesRes.error)
+      if (activeRes.error) console.error(activeRes.error)
+      if (historyRes.error) console.error(historyRes.error)
+
+      setRoutines((routinesRes.data ?? []).map(mapRoutineRow))
+      setActiveSession(activeRes.data ? mapSessionRow(activeRes.data) : null)
+      setHistory((historyRes.data ?? []).map(mapSessionRow))
+      setDataLoading(false)
+    }
+
+    loadData()
+    return () => {
+      cancelled = true
+    }
+  }, [user])
 
   useEffect(() => {
     if (!activeTimer) return
@@ -228,38 +441,79 @@ function App() {
     }))
   }
 
+  function logSupabaseError(error) {
+    if (error) console.error(error)
+  }
+
+  // --- Auth -----------------------------------------------------------------
+
+  function handleLogout() {
+    setIsSettingsOpen(false)
+    supabase.auth.signOut()
+  }
+
   // --- Routine CRUD (home screen) ------------------------------------------
 
   function handleCreateRoutine(name) {
-    setRoutines((prev) => [...prev, { id: crypto.randomUUID(), name, exercises: [] }])
+    const id = crypto.randomUUID()
+    setRoutines((prev) => [...prev, { id, name, exercises: [] }])
     setIsAddingRoutine(false)
+
+    supabase
+      .from('routines')
+      .insert({ id, user_id: user.id, name })
+      .then(({ error }) => logSupabaseError(error))
   }
 
   function handleRenameRoutine(routineId, name) {
     setRoutines((prev) => prev.map((r) => (r.id === routineId ? { ...r, name } : r)))
     setEditingRoutineId(null)
+
+    supabase
+      .from('routines')
+      .update({ name })
+      .eq('id', routineId)
+      .then(({ error }) => logSupabaseError(error))
   }
 
   function handleDeleteRoutine(routineId, routineName) {
     if (!window.confirm(`برنامه «${routineName}» حذف شود؟`)) return
+
     setRoutines((prev) => prev.filter((r) => r.id !== routineId))
+
+    supabase
+      .from('routines')
+      .delete()
+      .eq('id', routineId)
+      .then(({ error }) => logSupabaseError(error))
   }
 
   function handleStartRoutine(routine) {
+    const id = crypto.randomUUID()
+    const date = new Date().toISOString()
+    const exercises = routine.exercises.map((ex) => ({
+      exerciseId: ex.id,
+      exerciseName: ex.name,
+      restTime: ex.restTime || 0,
+      sets: [],
+    }))
+
     setDrafts({})
     setActiveTimer(null)
-    setActiveSession({
-      id: crypto.randomUUID(),
-      routineId: routine.id,
-      routineName: routine.name,
-      date: Date.now(),
-      exercises: routine.exercises.map((ex) => ({
-        exerciseId: ex.id,
-        exerciseName: ex.name,
-        restTime: ex.restTime || 0,
-        sets: [],
-      })),
-    })
+    setActiveSession({ id, routineId: routine.id, routineName: routine.name, date, exercises })
+
+    supabase
+      .from('sessions')
+      .insert({
+        id,
+        user_id: user.id,
+        routine_id: routine.id,
+        routine_name: routine.name,
+        status: 'active',
+        date,
+        exercises,
+      })
+      .then(({ error }) => logSupabaseError(error))
   }
 
   // --- Exercise CRUD (inside workout view) ---------------------------------
@@ -272,14 +526,30 @@ function App() {
         r.id === activeSession.routineId ? { ...r, exercises: [...r.exercises, newExercise] } : r
       )
     )
-    setActiveSession((prev) => ({
-      ...prev,
-      exercises: [
-        ...prev.exercises,
-        { exerciseId: newExercise.id, exerciseName: name, restTime, sets: [] },
-      ],
-    }))
+
+    const updatedExercises = [
+      ...activeSession.exercises,
+      { exerciseId: newExercise.id, exerciseName: name, restTime, sets: [] },
+    ]
+    setActiveSession({ ...activeSession, exercises: updatedExercises })
     setIsAddingExercise(false)
+
+    supabase
+      .from('exercises')
+      .insert({
+        id: newExercise.id,
+        routine_id: activeSession.routineId,
+        user_id: user.id,
+        name,
+        rest_time: restTime,
+      })
+      .then(({ error }) => logSupabaseError(error))
+
+    supabase
+      .from('sessions')
+      .update({ exercises: updatedExercises })
+      .eq('id', activeSession.id)
+      .then(({ error }) => logSupabaseError(error))
   }
 
   function handleRenameExercise(exerciseId, { name, restTime }) {
@@ -295,13 +565,24 @@ function App() {
           : r
       )
     )
-    setActiveSession((prev) => ({
-      ...prev,
-      exercises: prev.exercises.map((ex) =>
-        ex.exerciseId === exerciseId ? { ...ex, exerciseName: name, restTime } : ex
-      ),
-    }))
+
+    const updatedExercises = activeSession.exercises.map((ex) =>
+      ex.exerciseId === exerciseId ? { ...ex, exerciseName: name, restTime } : ex
+    )
+    setActiveSession({ ...activeSession, exercises: updatedExercises })
     setEditingExerciseId(null)
+
+    supabase
+      .from('exercises')
+      .update({ name, rest_time: restTime })
+      .eq('id', exerciseId)
+      .then(({ error }) => logSupabaseError(error))
+
+    supabase
+      .from('sessions')
+      .update({ exercises: updatedExercises })
+      .eq('id', activeSession.id)
+      .then(({ error }) => logSupabaseError(error))
   }
 
   function handleDeleteExercise(exerciseId, exerciseName) {
@@ -314,11 +595,22 @@ function App() {
           : r
       )
     )
-    setActiveSession((prev) => ({
-      ...prev,
-      exercises: prev.exercises.filter((ex) => ex.exerciseId !== exerciseId),
-    }))
+
+    const updatedExercises = activeSession.exercises.filter((ex) => ex.exerciseId !== exerciseId)
+    setActiveSession({ ...activeSession, exercises: updatedExercises })
     if (activeTimer?.exerciseId === exerciseId) setActiveTimer(null)
+
+    supabase
+      .from('exercises')
+      .delete()
+      .eq('id', exerciseId)
+      .then(({ error }) => logSupabaseError(error))
+
+    supabase
+      .from('sessions')
+      .update({ exercises: updatedExercises })
+      .eq('id', activeSession.id)
+      .then(({ error }) => logSupabaseError(error))
   }
 
   // --- Set logging -----------------------------------------------------------
@@ -338,35 +630,56 @@ function App() {
       timestamp: Date.now(),
     }
 
-    setActiveSession((prev) => ({
-      ...prev,
-      exercises: prev.exercises.map((ex) =>
-        ex.exerciseId === exerciseId ? { ...ex, sets: [...ex.sets, newSet] } : ex
-      ),
-    }))
-
+    const updatedExercises = activeSession.exercises.map((ex) =>
+      ex.exerciseId === exerciseId ? { ...ex, sets: [...ex.sets, newSet] } : ex
+    )
+    setActiveSession({ ...activeSession, exercises: updatedExercises })
     setDrafts((prev) => ({ ...prev, [exerciseId]: EMPTY_DRAFT }))
 
     const restTime = Number(exercise?.restTime) || 0
     if (restTime > 0) {
       setActiveTimer({ exerciseId, duration: restTime, endTime: Date.now() + restTime * 1000 })
     }
+
+    supabase
+      .from('sessions')
+      .update({ exercises: updatedExercises })
+      .eq('id', activeSession.id)
+      .then(({ error }) => logSupabaseError(error))
   }
 
   function handleDeleteSet(exerciseId, setId) {
-    setActiveSession((prev) => ({
-      ...prev,
-      exercises: prev.exercises.map((ex) =>
-        ex.exerciseId === exerciseId ? { ...ex, sets: ex.sets.filter((s) => s.id !== setId) } : ex
-      ),
-    }))
+    const updatedExercises = activeSession.exercises.map((ex) =>
+      ex.exerciseId === exerciseId ? { ...ex, sets: ex.sets.filter((s) => s.id !== setId) } : ex
+    )
+    setActiveSession({ ...activeSession, exercises: updatedExercises })
+
+    supabase
+      .from('sessions')
+      .update({ exercises: updatedExercises })
+      .eq('id', activeSession.id)
+      .then(({ error }) => logSupabaseError(error))
   }
 
   function handleFinishWorkout() {
     const loggedExercises = activeSession.exercises.filter((ex) => ex.sets.length > 0)
+    const sessionId = activeSession.id
+
     if (loggedExercises.length > 0) {
-      setHistory((prev) => [...prev, { ...activeSession, exercises: loggedExercises }])
+      setHistory((prev) => [{ ...activeSession, exercises: loggedExercises }, ...prev])
+      supabase
+        .from('sessions')
+        .update({ exercises: loggedExercises, status: 'completed' })
+        .eq('id', sessionId)
+        .then(({ error }) => logSupabaseError(error))
+    } else {
+      supabase
+        .from('sessions')
+        .delete()
+        .eq('id', sessionId)
+        .then(({ error }) => logSupabaseError(error))
     }
+
     setActiveSession(null)
     setDrafts({})
     setIsAddingExercise(false)
@@ -380,8 +693,6 @@ function App() {
     )
     if (!confirmed) return
 
-    localStorage.clear()
-
     setRoutines([])
     setHistory([])
     setActiveSession(null)
@@ -393,6 +704,12 @@ function App() {
     setIsAddingExercise(false)
     setIsSettingsOpen(false)
     setIsDark(true)
+
+    Promise.all([
+      supabase.from('sessions').delete().eq('user_id', user.id),
+      supabase.from('exercises').delete().eq('user_id', user.id),
+      supabase.from('routines').delete().eq('user_id', user.id),
+    ]).then((results) => results.forEach(({ error }) => logSupabaseError(error)))
   }
 
   const darkToggleButton = (
@@ -418,8 +735,19 @@ function App() {
   )
 
   const settingsModal = isSettingsOpen && (
-    <SettingsModal onClose={() => setIsSettingsOpen(false)} onClearData={handleClearAllData} />
+    <SettingsModal
+      onClose={() => setIsSettingsOpen(false)}
+      onClearData={handleClearAllData}
+      onLogout={handleLogout}
+      userEmail={user?.email}
+    />
   )
+
+  // --- Auth gate --------------------------------------------------------------
+
+  if (authSession === undefined) return <LoadingScreen />
+  if (!user) return <AuthScreen />
+  if (dataLoading) return <LoadingScreen />
 
   // --- Home screen ------------------------------------------------------------
 
