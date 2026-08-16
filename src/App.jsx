@@ -4,52 +4,6 @@ import { findPreviousExercise, formatSessionDate } from './utils/history'
 import { playRestCompleteChime } from './utils/audio'
 import { sanitizeNumericInput } from './utils/numbers'
 
-// ---------------------------------------------------------------------------
-// Starting routines — only used the very first time the app runs (before
-// anything is saved to LocalStorage). After that, routines/exercises are
-// fully editable in the UI via the add/edit/delete icon buttons.
-// restTime is in seconds and drives the auto rest timer after "ثبت ست".
-// ---------------------------------------------------------------------------
-const DEFAULT_ROUTINES = [
-  {
-    id: crypto.randomUUID(),
-    name: 'Upper A',
-    exercises: [
-      { name: 'پرس سینه هالتر', restTime: 150 },
-      { name: 'زیربغل هالتر خم', restTime: 120 },
-      { name: 'پرس سرشانه دمبل', restTime: 90 },
-    ].map(({ name, restTime }) => ({ id: crypto.randomUUID(), name, restTime })),
-  },
-  {
-    id: crypto.randomUUID(),
-    name: 'Lower A',
-    exercises: [
-      { name: 'اسکات هالتر', restTime: 180 },
-      { name: 'لانگز دمبل', restTime: 90 },
-      { name: 'ساق پا ایستاده', restTime: 60 },
-    ].map(({ name, restTime }) => ({ id: crypto.randomUUID(), name, restTime })),
-  },
-  {
-    id: crypto.randomUUID(),
-    name: 'Upper B',
-    exercises: [
-      { name: 'پرس سینه دمبل', restTime: 120 },
-      { name: 'زیربغل قایقی سیم‌کش', restTime: 90 },
-      { name: 'نشر جانب دمبل', restTime: 60 },
-    ].map(({ name, restTime }) => ({ id: crypto.randomUUID(), name, restTime })),
-  },
-  {
-    id: crypto.randomUUID(),
-    name: 'Lower B',
-    exercises: [
-      { name: 'ددلیفت رومانیایی', restTime: 150 },
-      { name: 'پرس پا دستگاه', restTime: 120 },
-      { name: 'پشت پا خوابیده دستگاه', restTime: 60 },
-    ].map(({ name, restTime }) => ({ id: crypto.randomUUID(), name, restTime })),
-  },
-]
-// ---------------------------------------------------------------------------
-
 const STORAGE_KEYS = {
   routines: 'gymbro_routines',
   history: 'gymbro_history',
@@ -175,9 +129,47 @@ function ExerciseEditRow({ initialName, initialRestTime, onSave, onCancel }) {
   )
 }
 
+// Settings popup — centered modal with a dimmed backdrop. Currently just
+// houses the destructive "Clear All Data" action, kept out of the main
+// header so it can't be tapped by accident.
+function SettingsModal({ onClose, onClearData }) {
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-sm rounded-2xl bg-white p-5 shadow-xl dark:bg-gray-900"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="mb-5 flex items-center justify-between">
+          <h2 className="text-lg font-bold">تنظیمات</h2>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="بستن"
+            className="inline-flex shrink-0 items-center justify-center rounded-full p-2 text-gray-400 transition-colors hover:bg-gray-100 dark:hover:bg-gray-800"
+          >
+            <Icon name="close" className="text-[20px]" />
+          </button>
+        </div>
+
+        <button
+          type="button"
+          onClick={onClearData}
+          className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-red-500 py-3.5 text-base font-bold text-red-500 transition active:scale-95 dark:border-red-500/70 dark:text-red-400"
+        >
+          <Icon name="delete_forever" className="text-[20px]" />
+          پاک کردن تمام اطلاعات
+        </button>
+      </div>
+    </div>
+  )
+}
+
 function App() {
   const [isDark, setIsDark] = useState(true)
-  const [routines, setRoutines] = usePersistedState(STORAGE_KEYS.routines, DEFAULT_ROUTINES)
+  const [routines, setRoutines] = usePersistedState(STORAGE_KEYS.routines, [])
   const [history, setHistory] = usePersistedState(STORAGE_KEYS.history, [])
   const [activeSession, setActiveSession] = usePersistedState(STORAGE_KEYS.activeSession, null)
   const [drafts, setDrafts] = useState({}) // { [exerciseId]: { weight, reps, note } }
@@ -186,6 +178,7 @@ function App() {
   const [isAddingRoutine, setIsAddingRoutine] = useState(false)
   const [editingExerciseId, setEditingExerciseId] = useState(null)
   const [isAddingExercise, setIsAddingExercise] = useState(false)
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false)
 
   // Rest timer — a single active timer at a time, tied to whichever exercise
   // it belongs to. Logging any set overwrites it (per spec: "restarting a
@@ -388,14 +381,8 @@ function App() {
     if (!confirmed) return
 
     localStorage.clear()
-    // Re-seed explicitly: if `routines` is already the DEFAULT_ROUTINES
-    // reference (e.g. a never-edited fresh install), setRoutines below is a
-    // no-op for React, so the usePersistedState effect wouldn't otherwise
-    // re-run to restore what localStorage.clear() just wiped.
-    localStorage.setItem(STORAGE_KEYS.routines, JSON.stringify(DEFAULT_ROUTINES))
-    localStorage.setItem(STORAGE_KEYS.history, JSON.stringify([]))
 
-    setRoutines(DEFAULT_ROUTINES)
+    setRoutines([])
     setHistory([])
     setActiveSession(null)
     setDrafts({})
@@ -404,6 +391,7 @@ function App() {
     setIsAddingRoutine(false)
     setEditingExerciseId(null)
     setIsAddingExercise(false)
+    setIsSettingsOpen(false)
     setIsDark(true)
   }
 
@@ -417,16 +405,20 @@ function App() {
     </button>
   )
 
-  const clearDataButton = (
+  const settingsButton = (
     <button
       type="button"
-      onClick={handleClearAllData}
-      aria-label="پاک کردن اطلاعات"
-      title="پاک کردن اطلاعات"
-      className="inline-flex shrink-0 items-center justify-center rounded-full p-2 text-gray-400 transition-colors hover:bg-gray-200 hover:text-red-500 dark:hover:bg-gray-800"
+      onClick={() => setIsSettingsOpen(true)}
+      aria-label="تنظیمات"
+      title="تنظیمات"
+      className="inline-flex shrink-0 items-center justify-center rounded-full p-2 text-gray-400 transition-colors hover:bg-gray-200 hover:text-purple-600 dark:hover:bg-gray-800"
     >
-      <Icon name="cleaning_services" className="text-[20px]" />
+      <Icon name="settings" className="text-[20px]" />
     </button>
+  )
+
+  const settingsModal = isSettingsOpen && (
+    <SettingsModal onClose={() => setIsSettingsOpen(false)} onClearData={handleClearAllData} />
   )
 
   // --- Home screen ------------------------------------------------------------
@@ -434,11 +426,12 @@ function App() {
   if (!activeSession) {
     return (
       <div className="min-h-screen bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-gray-100">
+        {settingsModal}
         <div className="mx-auto flex min-h-screen max-w-md flex-col px-4 py-6">
           <header className="mb-6 flex items-center justify-between">
             <h1 className="text-2xl font-bold">جیم برو</h1>
             <div className="flex items-center gap-2">
-              {clearDataButton}
+              {settingsButton}
               {darkToggleButton}
             </div>
           </header>
@@ -517,6 +510,7 @@ function App() {
 
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-gray-100">
+      {settingsModal}
       <div className="mx-auto flex min-h-screen max-w-md flex-col px-4 py-6">
         <header className="mb-6 flex items-center justify-between">
           <div className="flex flex-col">
@@ -524,7 +518,7 @@ function App() {
             <h1 className="text-2xl font-bold">{activeSession.routineName}</h1>
           </div>
           <div className="flex items-center gap-2">
-            {clearDataButton}
+            {settingsButton}
             {darkToggleButton}
           </div>
         </header>
