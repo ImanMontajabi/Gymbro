@@ -1,7 +1,11 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { supabase } from './supabase'
 import { findPreviousExercise, formatSessionDate } from './utils/history'
-import { playRestCompleteChime } from './utils/audio'
+import {
+  REST_SOUND_OPTIONS,
+  loadRestSoundPreference,
+  saveRestSoundPreference,
+} from './utils/audio'
 import { sanitizeNumericInput } from './utils/numbers'
 
 const EMPTY_DRAFT = { weight: '', reps: '', note: '' }
@@ -151,7 +155,14 @@ function ExerciseEditRow({ initialName, initialRestTime, onSave, onCancel }) {
 // Settings popup — centered modal with a dimmed backdrop. Houses the
 // destructive "Clear All Data" action and sign-out, kept out of the main
 // header so they can't be tapped by accident.
-function SettingsModal({ onClose, onClearData, onLogout, userEmail }) {
+function SettingsModal({
+  onClose,
+  onClearData,
+  onLogout,
+  userEmail,
+  restSound,
+  onRestSoundChange,
+}) {
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
@@ -181,6 +192,27 @@ function SettingsModal({ onClose, onClearData, onLogout, userEmail }) {
             {userEmail}
           </p>
         )}
+
+        <div className="mb-5 flex flex-col gap-2">
+          <label
+            htmlFor="rest-sound"
+            className="text-sm font-medium text-gray-600 dark:text-gray-400"
+          >
+            صدای زنگ استراحت
+          </label>
+          <select
+            id="rest-sound"
+            value={restSound}
+            onChange={(e) => onRestSoundChange(e.target.value)}
+            className="rounded-xl border border-gray-300 bg-gray-50 px-4 py-3.5 text-base text-gray-900 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
+          >
+            {REST_SOUND_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </div>
 
         <div className="flex flex-col gap-3">
           <button
@@ -341,12 +373,21 @@ function App() {
   // new set should reset and overwrite the timer").
   const [activeTimer, setActiveTimer] = useState(null) // { exerciseId, duration, endTime }
   const [remaining, setRemaining] = useState(0)
+  const [restSound, setRestSound] = useState(loadRestSoundPreference)
+  const audioRef = useRef(null)
 
   const user = authSession?.user ?? null
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', isDark)
   }, [isDark])
+
+  // Merely changing the `src` attribute on a mounted <audio> element doesn't
+  // reliably reload the resource in every browser — force it explicitly
+  // whenever the user picks a different rest sound.
+  useEffect(() => {
+    audioRef.current?.load()
+  }, [restSound])
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => setAuthSession(data.session))
@@ -412,7 +453,10 @@ function App() {
       setRemaining(secondsLeft)
       if (secondsLeft <= 0) {
         clearInterval(intervalId)
-        playRestCompleteChime()
+        if (audioRef.current) {
+          audioRef.current.currentTime = 0
+          audioRef.current.play().catch((e) => console.log('Playback failed:', e))
+        }
         setActiveTimer(null)
       }
     }
@@ -617,6 +661,14 @@ function App() {
 
   function handleAddSet(exerciseId, e) {
     e.preventDefault()
+    // Unlocks the <audio> element for iOS Safari — must run synchronously
+    // inside this real user-gesture handler, not inside a timer callback.
+    if (audioRef.current) {
+      audioRef.current
+        .play()
+        .then(() => audioRef.current.pause())
+        .catch((e) => console.log('Unlock failed:', e))
+    }
     const draft = getDraft(exerciseId)
     if (!(Number(draft.weight) > 0 && Number(draft.reps) > 0)) return
 
@@ -740,6 +792,11 @@ function App() {
       onClearData={handleClearAllData}
       onLogout={handleLogout}
       userEmail={user?.email}
+      restSound={restSound}
+      onRestSoundChange={(sound) => {
+        setRestSound(sound)
+        saveRestSoundPreference(sound)
+      }}
     />
   )
 
@@ -839,6 +896,7 @@ function App() {
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-gray-100">
       {settingsModal}
+      <audio ref={audioRef} src={`/sounds/${restSound}`} preload="auto" />
       <div className="mx-auto flex min-h-screen max-w-md flex-col px-4 py-6">
         <header className="mb-6 flex items-center justify-between">
           <div className="flex flex-col">
