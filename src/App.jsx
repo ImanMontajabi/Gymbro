@@ -403,6 +403,9 @@ function App() {
   const toaster = (
     <Toaster
       position="top-center"
+      containerStyle={{
+    top: 'calc(env(safe-area-inset-top) + 16px)'
+  }}
       toastOptions={{
         duration: 3000,
         style: {
