@@ -45,8 +45,10 @@ function logSupabaseError(error, message = 'خطایی رخ داد. دوباره
 // `timer` (from useRestTimer) is started/cancelled alongside set/exercise
 // mutations. `onDataCleared` lets the caller also reset cross-cutting UI
 // (dark mode) when "Clear All Data" runs — everything else that action
-// resets lives in this hook.
-export function useWorkoutData({ user, audioRef, timer, onDataCleared }) {
+// resets lives in this hook. `writeMutation` (from useMutationQueue) is
+// used for every write below instead of calling `supabase` directly, so
+// each one is automatically queued and replayed later if offline.
+export function useWorkoutData({ user, audioRef, timer, onDataCleared, writeMutation }) {
   const [routines, setRoutines] = useState([])
   const [history, setHistory] = useState([])
   const [activeSession, setActiveSession] = useState(null)
@@ -130,7 +132,11 @@ export function useWorkoutData({ user, audioRef, timer, onDataCleared }) {
   async function handleCreateRoutine(name) {
     setIsCreatingRoutine(true)
     const id = crypto.randomUUID()
-    const { error } = await supabase.from('routines').insert({ id, user_id: user.id, name })
+    const { error, queued } = await writeMutation({
+      table: 'routines',
+      type: 'insert',
+      payload: { id, user_id: user.id, name },
+    })
     setIsCreatingRoutine(false)
 
     if (error) {
@@ -140,6 +146,7 @@ export function useWorkoutData({ user, audioRef, timer, onDataCleared }) {
 
     setRoutines((prev) => [...prev, { id, name, exercises: [] }])
     setIsAddingRoutine(false)
+    if (queued) return
     toast.success('برنامه ایجاد شد')
   }
 
@@ -147,11 +154,12 @@ export function useWorkoutData({ user, audioRef, timer, onDataCleared }) {
     setRoutines((prev) => prev.map((r) => (r.id === routineId ? { ...r, name } : r)))
     setEditingRoutineId(null)
 
-    supabase
-      .from('routines')
-      .update({ name })
-      .eq('id', routineId)
-      .then(({ error }) => logSupabaseError(error))
+    writeMutation({
+      table: 'routines',
+      type: 'update',
+      payload: { name },
+      match: { column: 'id', value: routineId },
+    }).then(({ error }) => logSupabaseError(error))
   }
 
   function handleDeleteRoutine(routineId, routineName) {
@@ -159,14 +167,14 @@ export function useWorkoutData({ user, audioRef, timer, onDataCleared }) {
 
     setRoutines((prev) => prev.filter((r) => r.id !== routineId))
 
-    supabase
-      .from('routines')
-      .delete()
-      .eq('id', routineId)
-      .then(({ error }) => {
-        logSupabaseError(error)
-        if (!error) toast.success('برنامه حذف شد')
-      })
+    writeMutation({
+      table: 'routines',
+      type: 'delete',
+      match: { column: 'id', value: routineId },
+    }).then(({ error, queued }) => {
+      logSupabaseError(error)
+      if (!error && !queued) toast.success('برنامه حذف شد')
+    })
   }
 
   function handleStartRoutine(routine) {
@@ -183,9 +191,10 @@ export function useWorkoutData({ user, audioRef, timer, onDataCleared }) {
     timer.cancelTimer()
     setActiveSession({ id, routineId: routine.id, routineName: routine.name, date, exercises })
 
-    supabase
-      .from('sessions')
-      .insert({
+    writeMutation({
+      table: 'sessions',
+      type: 'insert',
+      payload: {
         id,
         user_id: user.id,
         routine_id: routine.id,
@@ -193,8 +202,8 @@ export function useWorkoutData({ user, audioRef, timer, onDataCleared }) {
         status: 'active',
         date,
         exercises,
-      })
-      .then(({ error }) => logSupabaseError(error))
+      },
+    }).then(({ error }) => logSupabaseError(error))
   }
 
   // --- Exercise CRUD (inside workout view) ---------------------------------
@@ -215,25 +224,27 @@ export function useWorkoutData({ user, audioRef, timer, onDataCleared }) {
     setActiveSession({ ...activeSession, exercises: updatedExercises })
     setIsAddingExercise(false)
 
-    supabase
-      .from('exercises')
-      .insert({
+    writeMutation({
+      table: 'exercises',
+      type: 'insert',
+      payload: {
         id: newExercise.id,
         routine_id: activeSession.routineId,
         user_id: user.id,
         name,
         rest_time: restTime,
-      })
-      .then(({ error }) => {
-        logSupabaseError(error)
-        if (!error) toast.success('حرکت اضافه شد')
-      })
+      },
+    }).then(({ error, queued }) => {
+      logSupabaseError(error)
+      if (!error && !queued) toast.success('حرکت اضافه شد')
+    })
 
-    supabase
-      .from('sessions')
-      .update({ exercises: updatedExercises })
-      .eq('id', activeSession.id)
-      .then(({ error }) => logSupabaseError(error))
+    writeMutation({
+      table: 'sessions',
+      type: 'update',
+      payload: { exercises: updatedExercises },
+      match: { column: 'id', value: activeSession.id },
+    }).then(({ error }) => logSupabaseError(error))
   }
 
   function handleRenameExercise(exerciseId, { name, restTime }) {
@@ -256,17 +267,19 @@ export function useWorkoutData({ user, audioRef, timer, onDataCleared }) {
     setActiveSession({ ...activeSession, exercises: updatedExercises })
     setEditingExerciseId(null)
 
-    supabase
-      .from('exercises')
-      .update({ name, rest_time: restTime })
-      .eq('id', exerciseId)
-      .then(({ error }) => logSupabaseError(error))
+    writeMutation({
+      table: 'exercises',
+      type: 'update',
+      payload: { name, rest_time: restTime },
+      match: { column: 'id', value: exerciseId },
+    }).then(({ error }) => logSupabaseError(error))
 
-    supabase
-      .from('sessions')
-      .update({ exercises: updatedExercises })
-      .eq('id', activeSession.id)
-      .then(({ error }) => logSupabaseError(error))
+    writeMutation({
+      table: 'sessions',
+      type: 'update',
+      payload: { exercises: updatedExercises },
+      match: { column: 'id', value: activeSession.id },
+    }).then(({ error }) => logSupabaseError(error))
   }
 
   function handleDeleteExercise(exerciseId, exerciseName) {
@@ -284,20 +297,21 @@ export function useWorkoutData({ user, audioRef, timer, onDataCleared }) {
     setActiveSession({ ...activeSession, exercises: updatedExercises })
     timer.cancelIfMatches(exerciseId)
 
-    supabase
-      .from('exercises')
-      .delete()
-      .eq('id', exerciseId)
-      .then(({ error }) => {
-        logSupabaseError(error)
-        if (!error) toast.success('حرکت حذف شد')
-      })
+    writeMutation({
+      table: 'exercises',
+      type: 'delete',
+      match: { column: 'id', value: exerciseId },
+    }).then(({ error, queued }) => {
+      logSupabaseError(error)
+      if (!error && !queued) toast.success('حرکت حذف شد')
+    })
 
-    supabase
-      .from('sessions')
-      .update({ exercises: updatedExercises })
-      .eq('id', activeSession.id)
-      .then(({ error }) => logSupabaseError(error))
+    writeMutation({
+      table: 'sessions',
+      type: 'update',
+      payload: { exercises: updatedExercises },
+      match: { column: 'id', value: activeSession.id },
+    }).then(({ error }) => logSupabaseError(error))
   }
 
   // --- Set logging -----------------------------------------------------------
@@ -337,17 +351,19 @@ export function useWorkoutData({ user, audioRef, timer, onDataCleared }) {
     }
 
     setAddingSetExerciseId(exerciseId)
-    const { error } = await supabase
-      .from('sessions')
-      .update({ exercises: updatedExercises })
-      .eq('id', activeSession.id)
+    const { error, queued } = await writeMutation({
+      table: 'sessions',
+      type: 'update',
+      payload: { exercises: updatedExercises },
+      match: { column: 'id', value: activeSession.id },
+    })
     setAddingSetExerciseId(null)
 
     if (error) {
       logSupabaseError(error, 'ذخیره ست در فضای ابری ناموفق بود')
       return
     }
-    toast.success('ست در فضای ابری ذخیره شد')
+    if (!queued) toast.success('ست در فضای ابری ذخیره شد')
   }
 
   function handleDeleteSet(exerciseId, setId) {
@@ -356,11 +372,12 @@ export function useWorkoutData({ user, audioRef, timer, onDataCleared }) {
     )
     setActiveSession({ ...activeSession, exercises: updatedExercises })
 
-    supabase
-      .from('sessions')
-      .update({ exercises: updatedExercises })
-      .eq('id', activeSession.id)
-      .then(({ error }) => logSupabaseError(error))
+    writeMutation({
+      table: 'sessions',
+      type: 'update',
+      payload: { exercises: updatedExercises },
+      match: { column: 'id', value: activeSession.id },
+    }).then(({ error }) => logSupabaseError(error))
   }
 
   function handleFinishWorkout() {
@@ -369,20 +386,21 @@ export function useWorkoutData({ user, audioRef, timer, onDataCleared }) {
 
     if (loggedExercises.length > 0) {
       setHistory((prev) => [{ ...activeSession, exercises: loggedExercises }, ...prev])
-      supabase
-        .from('sessions')
-        .update({ exercises: loggedExercises, status: 'completed' })
-        .eq('id', sessionId)
-        .then(({ error }) => {
-          logSupabaseError(error)
-          if (!error) toast.success('تمرین ذخیره شد')
-        })
+      writeMutation({
+        table: 'sessions',
+        type: 'update',
+        payload: { exercises: loggedExercises, status: 'completed' },
+        match: { column: 'id', value: sessionId },
+      }).then(({ error, queued }) => {
+        logSupabaseError(error)
+        if (!error && !queued) toast.success('تمرین ذخیره شد')
+      })
     } else {
-      supabase
-        .from('sessions')
-        .delete()
-        .eq('id', sessionId)
-        .then(({ error }) => logSupabaseError(error))
+      writeMutation({
+        table: 'sessions',
+        type: 'delete',
+        match: { column: 'id', value: sessionId },
+      }).then(({ error }) => logSupabaseError(error))
     }
 
     setActiveSession(null)
@@ -392,7 +410,17 @@ export function useWorkoutData({ user, audioRef, timer, onDataCleared }) {
     timer.cancelTimer()
   }
 
+  // Deliberately NOT routed through the offline queue: queuing a "wipe
+  // everything" mutation would risk it firing later and deleting workouts
+  // logged in the meantime, in an unpredictable order relative to those
+  // writes. It's rare and destructive enough to just require a live
+  // connection.
   function handleClearAllData() {
+    if (!navigator.onLine) {
+      toast.error('برای پاک کردن اطلاعات به اینترنت متصل شوید')
+      return
+    }
+
     const confirmed = window.confirm(
       'آیا مطمئن هستید؟ تمام برنامه‌ها و رکوردهای شما حذف خواهد شد.'
     )

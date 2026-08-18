@@ -2,6 +2,8 @@ import { useRef, useState } from 'react'
 import { Toaster } from 'react-hot-toast'
 import { useAuth } from './hooks/useAuth'
 import { useDarkMode } from './hooks/useDarkMode'
+import { useNetworkStatus } from './hooks/useNetworkStatus'
+import { useMutationQueue } from './hooks/useMutationQueue'
 import { useRestTimer } from './hooks/useRestTimer'
 import { useRestSound } from './hooks/useRestSound'
 import { useWorkoutData } from './hooks/useWorkoutData'
@@ -35,6 +37,9 @@ function App() {
   const [isDark, setIsDark] = useDarkMode()
   const [activeTab, setActiveTab] = useState('workout') // 'workout' | 'history'
 
+  const isOnline = useNetworkStatus()
+  const { writeMutation } = useMutationQueue()
+
   const audioRef = useRef(null)
   const timer = useRestTimer(audioRef)
   const { restSound, setRestSound } = useRestSound(audioRef)
@@ -43,6 +48,7 @@ function App() {
     audioRef,
     timer,
     onDataCleared: () => setIsDark(true),
+    writeMutation,
   })
   const progressChart = useProgressChart(workout.history)
 
@@ -94,6 +100,7 @@ function App() {
           onLogout={logout}
           isDark={isDark}
           onToggleDark={toggleDark}
+          isOnline={isOnline}
           restSound={restSound}
           onRestSoundChange={setRestSound}
           onClearData={workout.handleClearAllData}
@@ -108,6 +115,7 @@ function App() {
           onLogout={logout}
           isDark={isDark}
           onToggleDark={toggleDark}
+          isOnline={isOnline}
           restSound={restSound}
           onRestSoundChange={setRestSound}
           activeTab={activeTab}

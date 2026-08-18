@@ -20,6 +20,7 @@ export default function WorkoutTab({
   onLogout,
   isDark,
   onToggleDark,
+  isOnline,
   restSound,
   onRestSoundChange,
   activeTab,
@@ -78,6 +79,7 @@ export default function WorkoutTab({
       isDark={isDark}
       onToggleDark={onToggleDark}
       onOpenSettings={() => setIsSettingsOpen(true)}
+      isOnline={isOnline}
     />
   )
 

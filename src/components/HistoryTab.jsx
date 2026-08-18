@@ -17,6 +17,7 @@ export default function HistoryTab({
   onLogout,
   isDark,
   onToggleDark,
+  isOnline,
   restSound,
   onRestSoundChange,
   onClearData,
@@ -53,6 +54,7 @@ export default function HistoryTab({
             isDark={isDark}
             onToggleDark={onToggleDark}
             onOpenSettings={() => setIsSettingsOpen(true)}
+            isOnline={isOnline}
           />
         </header>
 
