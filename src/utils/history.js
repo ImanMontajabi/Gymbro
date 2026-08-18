@@ -19,3 +19,12 @@ export function formatSessionDate(timestamp) {
     day: 'numeric',
   })
 }
+
+// Compact `M/D` label for chart axes, where the long form from
+// formatSessionDate would overlap across several data points.
+export function formatShortDate(timestamp) {
+  return new Date(timestamp).toLocaleDateString('fa-IR', {
+    month: 'numeric',
+    day: 'numeric',
+  })
+}

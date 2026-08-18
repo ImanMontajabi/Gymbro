@@ -1,13 +1,17 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import toast, { Toaster } from 'react-hot-toast'
 import { supabase } from './supabase'
-import { findPreviousExercise, formatSessionDate } from './utils/history'
+import { findPreviousExercise, formatSessionDate, formatShortDate } from './utils/history'
 import {
   REST_SOUND_OPTIONS,
   loadRestSoundPreference,
   saveRestSoundPreference,
 } from './utils/audio'
 import { sanitizeNumericInput } from './utils/numbers'
+
+// recharts is large and only needed once the history tab is opened, so it's
+// split into its own chunk instead of bloating the initial PWA payload.
+const ProgressChart = lazy(() => import('./components/ProgressChart'))
 
 const EMPTY_DRAFT = { weight: '', reps: '', note: '' }
 
@@ -372,6 +376,38 @@ function LoadingScreen() {
   )
 }
 
+// Fixed bottom navigation switching between the workout flow and the
+// history/analytics tab — sits below all screens, safe-area aware for the
+// iOS home-indicator strip.
+function BottomTabBar({ activeTab, onChange }) {
+  const tabs = [
+    { id: 'workout', label: 'تمرین امروز', icon: 'fitness_center' },
+    { id: 'history', label: 'تاریخچه و پیشرفت', icon: 'monitoring' },
+  ]
+
+  return (
+    <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-gray-200 bg-white/90 pb-[env(safe-area-inset-bottom)] backdrop-blur-md dark:border-gray-800 dark:bg-gray-900/90">
+      <div className="mx-auto flex max-w-md">
+        {tabs.map((tab) => (
+          <button
+            key={tab.id}
+            type="button"
+            onClick={() => onChange(tab.id)}
+            className={`flex flex-1 flex-col items-center gap-1 py-2.5 text-xs font-bold transition-colors ${
+              activeTab === tab.id
+                ? 'text-purple-600 dark:text-purple-400'
+                : 'text-gray-400 dark:text-gray-500'
+            }`}
+          >
+            <Icon name={tab.icon} className="text-[22px]" />
+            {tab.label}
+          </button>
+        ))}
+      </div>
+    </nav>
+  )
+}
+
 function App() {
   const [authSession, setAuthSession] = useState(undefined) // undefined = checking, null = logged out
   const [isDark, setIsDark] = useState(true)
@@ -397,6 +433,9 @@ function App() {
 
   const [isCreatingRoutine, setIsCreatingRoutine] = useState(false)
   const [addingSetExerciseId, setAddingSetExerciseId] = useState(null)
+
+  const [activeTab, setActiveTab] = useState('workout') // 'workout' | 'history'
+  const [selectedExercise, setSelectedExercise] = useState('')
 
   const user = authSession?.user ?? null
 
@@ -518,6 +557,45 @@ function App() {
     }
     return map
   }, [history, activeSession])
+
+  // Every exercise name that appears in completed history, for the progress
+  // chart's dropdown — sorted for a stable, scannable list.
+  const exerciseNames = useMemo(() => {
+    const names = new Set()
+    for (const session of history) {
+      for (const ex of session.exercises) names.add(ex.exerciseName)
+    }
+    return Array.from(names).sort((a, b) => a.localeCompare(b, 'fa'))
+  }, [history])
+
+  // Keep the chart's selection valid as history loads/changes — default to
+  // the first exercise, and fall back if the previously selected one
+  // disappears (e.g. after "Clear All Data").
+  useEffect(() => {
+    if (exerciseNames.length === 0) {
+      setSelectedExercise('')
+    } else if (!exerciseNames.includes(selectedExercise)) {
+      setSelectedExercise(exerciseNames[0])
+    }
+  }, [exerciseNames, selectedExercise])
+
+  // Max weight lifted per session for the selected exercise, oldest first
+  // (history itself is newest-first) so the chart reads left-to-right.
+  const chartData = useMemo(() => {
+    if (!selectedExercise) return []
+    return history
+      .slice()
+      .reverse()
+      .map((session) => {
+        const ex = session.exercises.find((e) => e.exerciseName === selectedExercise)
+        if (!ex || ex.sets.length === 0) return null
+        return {
+          date: formatShortDate(session.date),
+          maxWeight: Math.max(...ex.sets.map((s) => s.weight)),
+        }
+      })
+      .filter(Boolean)
+  }, [history, selectedExercise])
 
   function getDraft(exerciseId) {
     return drafts[exerciseId] || EMPTY_DRAFT
@@ -875,6 +953,76 @@ function App() {
     />
   )
 
+  const bottomTabBar = <BottomTabBar activeTab={activeTab} onChange={setActiveTab} />
+
+  // --- History & analytics tab -------------------------------------------
+
+  const historyView = (
+    <div className="min-h-screen bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-gray-100">
+      {toaster}
+      {settingsModal}
+      <div className="mx-auto flex min-h-screen max-w-md flex-col px-4 pt-[calc(env(safe-area-inset-top)+1.5rem)] pb-[calc(env(safe-area-inset-bottom)+5.5rem)]">
+        <header className="mb-6 flex items-center justify-between">
+          <h1 className="text-2xl font-bold">تاریخچه و پیشرفت</h1>
+          <div className="flex items-center gap-2">
+            {settingsButton}
+            {darkToggleButton}
+          </div>
+        </header>
+
+        <div className="flex flex-col gap-4">
+          <Suspense
+            fallback={
+              <div className="h-[19.5rem] animate-pulse rounded-2xl bg-white shadow-sm dark:bg-gray-900" />
+            }
+          >
+            <ProgressChart
+              exerciseNames={exerciseNames}
+              selectedExercise={selectedExercise}
+              onSelectExercise={setSelectedExercise}
+              chartData={chartData}
+            />
+          </Suspense>
+
+          <section>
+            <h2 className="mb-3 text-lg font-bold">تمرین‌های گذشته</h2>
+            {history.length === 0 ? (
+              <p className="rounded-2xl bg-white p-4 text-center text-sm text-gray-400 shadow-sm dark:bg-gray-900 dark:text-gray-500">
+                هنوز تمرینی به پایان نرسانده‌اید
+              </p>
+            ) : (
+              <ul className="flex flex-col gap-3">
+                {history.map((session) => {
+                  const totalSets = session.exercises.reduce(
+                    (sum, ex) => sum + ex.sets.length,
+                    0
+                  )
+                  return (
+                    <li
+                      key={session.id}
+                      className="rounded-2xl bg-white p-4 shadow-sm dark:bg-gray-900"
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <h3 className="truncate text-base font-bold">{session.routineName}</h3>
+                        <span className="shrink-0 text-xs text-gray-400 dark:text-gray-500">
+                          {formatSessionDate(session.date)}
+                        </span>
+                      </div>
+                      <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                        {session.exercises.length} حرکت · {totalSets} ست
+                      </p>
+                    </li>
+                  )
+                })}
+              </ul>
+            )}
+          </section>
+        </div>
+      </div>
+      {bottomTabBar}
+    </div>
+  )
+
   // --- Auth gate --------------------------------------------------------------
 
   if (authSession === undefined)
@@ -899,6 +1047,10 @@ function App() {
       </>
     )
 
+  // --- Tab routing --------------------------------------------------------
+
+  if (activeTab === 'history') return historyView
+
   // --- Home screen ------------------------------------------------------------
 
   if (!activeSession) {
@@ -906,7 +1058,7 @@ function App() {
       <div className="min-h-screen bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-gray-100">
         {toaster}
         {settingsModal}
-        <div className="mx-auto flex min-h-screen max-w-md flex-col px-4 pt-[calc(env(safe-area-inset-top)+1.5rem)] pb-[calc(env(safe-area-inset-bottom)+1.5rem)]">
+        <div className="mx-auto flex min-h-screen max-w-md flex-col px-4 pt-[calc(env(safe-area-inset-top)+1.5rem)] pb-[calc(env(safe-area-inset-bottom)+5.5rem)]">
           <header className="mb-6 flex items-center justify-between">
             <h1 className="text-2xl font-bold">جیم برو</h1>
             <div className="flex items-center gap-2">
@@ -982,6 +1134,7 @@ function App() {
             </div>
           </section>
         </div>
+        {bottomTabBar}
       </div>
     )
   }
@@ -993,7 +1146,7 @@ function App() {
       {toaster}
       {settingsModal}
       <audio ref={audioRef} src={`/sounds/${restSound}`} preload="auto" />
-      <div className="mx-auto flex min-h-screen max-w-md flex-col px-4 pt-[calc(env(safe-area-inset-top)+1.5rem)] pb-[calc(env(safe-area-inset-bottom)+1.5rem)]">
+      <div className="mx-auto flex min-h-screen max-w-md flex-col px-4 pt-[calc(env(safe-area-inset-top)+1.5rem)] pb-[calc(env(safe-area-inset-bottom)+5.5rem)]">
         <header className="mb-6 flex items-center justify-between">
           <div className="flex flex-col">
             <span className="text-sm text-gray-500 dark:text-gray-400">برنامه</span>
@@ -1249,6 +1402,7 @@ function App() {
           پایان تمرین
         </button>
       </div>
+      {bottomTabBar}
     </div>
   )
 }
