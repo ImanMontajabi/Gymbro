@@ -358,7 +358,7 @@ function AuthScreen() {
 // avoids a blank flash on a cloud-backed app that always has some latency.
 function LoadingScreen() {
   return (
-    <div className="min-h-screen bg-gray-50 px-4 py-6 dark:bg-gray-950">
+    <div className="min-h-screen bg-gray-50 px-4 pt-[calc(env(safe-area-inset-top)+1.5rem)] pb-[calc(env(safe-area-inset-bottom)+1.5rem)] dark:bg-gray-950">
       <div className="mx-auto flex max-w-md flex-col gap-4">
         <div className="mb-2 flex items-center justify-between">
           <div className="h-8 w-24 animate-pulse rounded-lg bg-gray-200 dark:bg-gray-800" />
@@ -903,7 +903,7 @@ function App() {
       <div className="min-h-screen bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-gray-100">
         {toaster}
         {settingsModal}
-        <div className="mx-auto flex min-h-screen max-w-md flex-col px-4 py-6">
+        <div className="mx-auto flex min-h-screen max-w-md flex-col px-4 pt-[calc(env(safe-area-inset-top)+1.5rem)] pb-[calc(env(safe-area-inset-bottom)+1.5rem)]">
           <header className="mb-6 flex items-center justify-between">
             <h1 className="text-2xl font-bold">جیم برو</h1>
             <div className="flex items-center gap-2">
@@ -990,7 +990,7 @@ function App() {
       {toaster}
       {settingsModal}
       <audio ref={audioRef} src={`/sounds/${restSound}`} preload="auto" />
-      <div className="mx-auto flex min-h-screen max-w-md flex-col px-4 py-6">
+      <div className="mx-auto flex min-h-screen max-w-md flex-col px-4 pt-[calc(env(safe-area-inset-top)+1.5rem)] pb-[calc(env(safe-area-inset-bottom)+1.5rem)]">
         <header className="mb-6 flex items-center justify-between">
           <div className="flex flex-col">
             <span className="text-sm text-gray-500 dark:text-gray-400">برنامه</span>
