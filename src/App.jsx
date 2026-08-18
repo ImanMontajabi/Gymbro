@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import toast, { Toaster } from 'react-hot-toast'
 import { supabase } from './supabase'
 import { findPreviousExercise, formatSessionDate } from './utils/history'
 import {
@@ -53,7 +54,7 @@ function Icon({ name, className = '' }) {
 
 // Shared inline "text input + confirm + cancel" row, used for renaming a
 // routine/exercise and for the two "add new" forms.
-function NameEditRow({ initialValue, placeholder, onSave, onCancel }) {
+function NameEditRow({ initialValue, placeholder, onSave, onCancel, isSaving = false }) {
   const [draft, setDraft] = useState(initialValue)
 
   function save() {
@@ -68,6 +69,7 @@ function NameEditRow({ initialValue, placeholder, onSave, onCancel }) {
         type="text"
         value={draft}
         placeholder={placeholder}
+        disabled={isSaving}
         onChange={(e) => setDraft(e.target.value)}
         onKeyDown={(e) => {
           if (e.key === 'Enter') {
@@ -75,21 +77,27 @@ function NameEditRow({ initialValue, placeholder, onSave, onCancel }) {
             save()
           }
         }}
-        className="min-w-0 flex-1 rounded-lg border border-purple-400 bg-gray-50 px-3 py-3 text-base text-gray-900 focus:outline-none focus:ring-2 focus:ring-purple-500 dark:bg-gray-800 dark:text-gray-100"
+        className="min-w-0 flex-1 rounded-lg border border-purple-400 bg-gray-50 px-3 py-3 text-base text-gray-900 focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-60 dark:bg-gray-800 dark:text-gray-100"
       />
       <button
         type="button"
         onClick={save}
+        disabled={isSaving}
         aria-label="ذخیره"
-        className="inline-flex shrink-0 items-center justify-center rounded-full p-3 text-green-600 transition-colors hover:bg-gray-100 dark:text-green-400 dark:hover:bg-gray-800"
+        className="inline-flex shrink-0 items-center justify-center rounded-full p-3 text-green-600 transition-colors hover:bg-gray-100 disabled:opacity-60 dark:text-green-400 dark:hover:bg-gray-800"
       >
-        <Icon name="check" className="text-[20px]" />
+        {isSaving ? (
+          <span className="block h-5 w-5 animate-spin rounded-full border-2 border-green-600 border-t-transparent dark:border-green-400" />
+        ) : (
+          <Icon name="check" className="text-[20px]" />
+        )}
       </button>
       <button
         type="button"
         onClick={onCancel}
+        disabled={isSaving}
         aria-label="لغو"
-        className="inline-flex shrink-0 items-center justify-center rounded-full p-3 text-gray-400 transition-colors hover:bg-gray-100 hover:text-red-500 dark:hover:bg-gray-800"
+        className="inline-flex shrink-0 items-center justify-center rounded-full p-3 text-gray-400 transition-colors hover:bg-gray-100 hover:text-red-500 disabled:opacity-60 dark:hover:bg-gray-800"
       >
         <Icon name="close" className="text-[20px]" />
       </button>
@@ -345,10 +353,21 @@ function AuthScreen() {
   )
 }
 
+// Skeleton loader shown while checking the auth session and while the
+// initial Supabase fetch (routines/history/active session) is in flight —
+// avoids a blank flash on a cloud-backed app that always has some latency.
 function LoadingScreen() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50 text-gray-500 dark:bg-gray-950 dark:text-gray-400">
-      در حال بارگذاری...
+    <div className="min-h-screen bg-gray-50 px-4 py-6 dark:bg-gray-950">
+      <div className="mx-auto flex max-w-md flex-col gap-4">
+        <div className="mb-2 flex items-center justify-between">
+          <div className="h-8 w-24 animate-pulse rounded-lg bg-gray-200 dark:bg-gray-800" />
+          <div className="h-9 w-9 animate-pulse rounded-full bg-gray-200 dark:bg-gray-800" />
+        </div>
+        <div className="h-20 animate-pulse rounded-2xl bg-gray-200 dark:bg-gray-800" />
+        <div className="h-20 animate-pulse rounded-2xl bg-gray-200 dark:bg-gray-800" />
+        <div className="h-20 animate-pulse rounded-2xl bg-gray-200 dark:bg-gray-800" />
+      </div>
     </div>
   )
 }
@@ -376,7 +395,30 @@ function App() {
   const [restSound, setRestSound] = useState(loadRestSoundPreference)
   const audioRef = useRef(null)
 
+  const [isCreatingRoutine, setIsCreatingRoutine] = useState(false)
+  const [addingSetExerciseId, setAddingSetExerciseId] = useState(null)
+
   const user = authSession?.user ?? null
+
+  const toaster = (
+    <Toaster
+      position="top-center"
+      toastOptions={{
+        duration: 3000,
+        style: {
+          background: '#1f2937',
+          color: '#f3f4f6',
+          fontFamily: 'Vazirmatn, sans-serif',
+          direction: 'rtl',
+          borderRadius: '0.75rem',
+          padding: '10px 16px',
+          fontSize: '0.95rem',
+        },
+        success: { iconTheme: { primary: '#a855f7', secondary: '#1f2937' } },
+        error: { iconTheme: { primary: '#ef4444', secondary: '#1f2937' } },
+      }}
+    />
+  )
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', isDark)
@@ -485,8 +527,11 @@ function App() {
     }))
   }
 
-  function logSupabaseError(error) {
-    if (error) console.error(error)
+  function logSupabaseError(error, message = 'خطایی رخ داد. دوباره تلاش کنید') {
+    if (error) {
+      console.error(error)
+      toast.error(message)
+    }
   }
 
   // --- Auth -----------------------------------------------------------------
@@ -498,15 +543,20 @@ function App() {
 
   // --- Routine CRUD (home screen) ------------------------------------------
 
-  function handleCreateRoutine(name) {
+  async function handleCreateRoutine(name) {
+    setIsCreatingRoutine(true)
     const id = crypto.randomUUID()
+    const { error } = await supabase.from('routines').insert({ id, user_id: user.id, name })
+    setIsCreatingRoutine(false)
+
+    if (error) {
+      logSupabaseError(error, 'خطا در ایجاد برنامه')
+      return
+    }
+
     setRoutines((prev) => [...prev, { id, name, exercises: [] }])
     setIsAddingRoutine(false)
-
-    supabase
-      .from('routines')
-      .insert({ id, user_id: user.id, name })
-      .then(({ error }) => logSupabaseError(error))
+    toast.success('برنامه ایجاد شد')
   }
 
   function handleRenameRoutine(routineId, name) {
@@ -529,7 +579,10 @@ function App() {
       .from('routines')
       .delete()
       .eq('id', routineId)
-      .then(({ error }) => logSupabaseError(error))
+      .then(({ error }) => {
+        logSupabaseError(error)
+        if (!error) toast.success('برنامه حذف شد')
+      })
   }
 
   function handleStartRoutine(routine) {
@@ -587,7 +640,10 @@ function App() {
         name,
         rest_time: restTime,
       })
-      .then(({ error }) => logSupabaseError(error))
+      .then(({ error }) => {
+        logSupabaseError(error)
+        if (!error) toast.success('حرکت اضافه شد')
+      })
 
     supabase
       .from('sessions')
@@ -648,7 +704,10 @@ function App() {
       .from('exercises')
       .delete()
       .eq('id', exerciseId)
-      .then(({ error }) => logSupabaseError(error))
+      .then(({ error }) => {
+        logSupabaseError(error)
+        if (!error) toast.success('حرکت حذف شد')
+      })
 
     supabase
       .from('sessions')
@@ -659,7 +718,7 @@ function App() {
 
   // --- Set logging -----------------------------------------------------------
 
-  function handleAddSet(exerciseId, e) {
+  async function handleAddSet(exerciseId, e) {
     e.preventDefault()
     // Unlocks the <audio> element for iOS Safari — must run synchronously
     // inside this real user-gesture handler, not inside a timer callback.
@@ -693,11 +752,18 @@ function App() {
       setActiveTimer({ exerciseId, duration: restTime, endTime: Date.now() + restTime * 1000 })
     }
 
-    supabase
+    setAddingSetExerciseId(exerciseId)
+    const { error } = await supabase
       .from('sessions')
       .update({ exercises: updatedExercises })
       .eq('id', activeSession.id)
-      .then(({ error }) => logSupabaseError(error))
+    setAddingSetExerciseId(null)
+
+    if (error) {
+      logSupabaseError(error, 'ذخیره ست در فضای ابری ناموفق بود')
+      return
+    }
+    toast.success('ست در فضای ابری ذخیره شد')
   }
 
   function handleDeleteSet(exerciseId, setId) {
@@ -723,7 +789,10 @@ function App() {
         .from('sessions')
         .update({ exercises: loggedExercises, status: 'completed' })
         .eq('id', sessionId)
-        .then(({ error }) => logSupabaseError(error))
+        .then(({ error }) => {
+          logSupabaseError(error)
+          if (!error) toast.success('تمرین ذخیره شد')
+        })
     } else {
       supabase
         .from('sessions')
@@ -761,7 +830,10 @@ function App() {
       supabase.from('sessions').delete().eq('user_id', user.id),
       supabase.from('exercises').delete().eq('user_id', user.id),
       supabase.from('routines').delete().eq('user_id', user.id),
-    ]).then((results) => results.forEach(({ error }) => logSupabaseError(error)))
+    ]).then((results) => {
+      results.forEach(({ error }) => logSupabaseError(error))
+      if (results.every(({ error }) => !error)) toast.success('تمام اطلاعات پاک شد')
+    })
   }
 
   const darkToggleButton = (
@@ -802,15 +874,34 @@ function App() {
 
   // --- Auth gate --------------------------------------------------------------
 
-  if (authSession === undefined) return <LoadingScreen />
-  if (!user) return <AuthScreen />
-  if (dataLoading) return <LoadingScreen />
+  if (authSession === undefined)
+    return (
+      <>
+        {toaster}
+        <LoadingScreen />
+      </>
+    )
+  if (!user)
+    return (
+      <>
+        {toaster}
+        <AuthScreen />
+      </>
+    )
+  if (dataLoading)
+    return (
+      <>
+        {toaster}
+        <LoadingScreen />
+      </>
+    )
 
   // --- Home screen ------------------------------------------------------------
 
   if (!activeSession) {
     return (
       <div className="min-h-screen bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-gray-100">
+        {toaster}
         {settingsModal}
         <div className="mx-auto flex min-h-screen max-w-md flex-col px-4 py-6">
           <header className="mb-6 flex items-center justify-between">
@@ -872,6 +963,7 @@ function App() {
                     placeholder="مثلاً Push Day"
                     onSave={handleCreateRoutine}
                     onCancel={() => setIsAddingRoutine(false)}
+                    isSaving={isCreatingRoutine}
                   />
                 </div>
               ) : (
@@ -895,6 +987,7 @@ function App() {
 
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-gray-100">
+      {toaster}
       {settingsModal}
       <audio ref={audioRef} src={`/sounds/${restSound}`} preload="auto" />
       <div className="mx-auto flex min-h-screen max-w-md flex-col px-4 py-6">
@@ -914,6 +1007,7 @@ function App() {
             const draft = getDraft(ex.exerciseId)
             const previous = previousRecords[ex.exerciseName]
             const canSubmit = Number(draft.weight) > 0 && Number(draft.reps) > 0
+            const isSubmittingSet = addingSetExerciseId === ex.exerciseId
 
             return (
               <div
@@ -1051,10 +1145,13 @@ function App() {
 
                   <button
                     type="submit"
-                    disabled={!canSubmit}
-                    className="rounded-xl bg-purple-600 py-4 text-lg font-bold text-white transition disabled:cursor-not-allowed disabled:bg-gray-300 disabled:text-gray-500 dark:disabled:bg-gray-800 dark:disabled:text-gray-600"
+                    disabled={!canSubmit || isSubmittingSet}
+                    className="flex items-center justify-center gap-2 rounded-xl bg-purple-600 py-4 text-lg font-bold text-white transition disabled:cursor-not-allowed disabled:bg-gray-300 disabled:text-gray-500 dark:disabled:bg-gray-800 dark:disabled:text-gray-600"
                   >
-                    ثبت ست
+                    {isSubmittingSet && (
+                      <span className="h-5 w-5 animate-spin rounded-full border-2 border-white/70 border-t-transparent dark:border-gray-500" />
+                    )}
+                    {isSubmittingSet ? 'در حال ثبت...' : 'ثبت ست'}
                   </button>
                 </form>
 
