@@ -18,14 +18,14 @@ export default function HeaderActions({ isDark, onToggleDark, onOpenSettings, is
         onClick={onOpenSettings}
         aria-label="تنظیمات"
         title="تنظیمات"
-        className="inline-flex shrink-0 items-center justify-center rounded-full p-2 text-gray-400 transition-colors hover:bg-gray-200 hover:text-purple-600 dark:hover:bg-gray-800"
+        className="inline-flex shrink-0 items-center justify-center rounded-full p-2.5 text-gray-400 transition-all duration-150 ease-out hover:bg-gray-200 hover:text-purple-600 active:scale-90 active:opacity-70 dark:hover:bg-gray-800"
       >
         <Icon name="settings" className="text-[20px]" />
       </button>
       <button
         type="button"
         onClick={onToggleDark}
-        className="rounded-full bg-gray-200 px-4 py-2 text-sm font-medium text-gray-900 dark:bg-gray-800 dark:text-gray-100"
+        className="rounded-full bg-gray-200 px-4 py-2.5 text-sm font-medium text-gray-900 transition-all duration-150 ease-out active:scale-95 active:opacity-70 dark:bg-gray-800 dark:text-gray-100"
       >
         {isDark ? 'حالت روشن' : 'حالت تاریک'}
       </button>

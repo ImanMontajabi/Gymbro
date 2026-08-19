@@ -1,9 +1,9 @@
 import Icon from './Icon'
 import { REST_SOUND_OPTIONS } from '../utils/audio'
 
-// Settings popup — centered modal with a dimmed backdrop. Houses the
-// destructive "Clear All Data" action and sign-out, kept out of the main
-// header so they can't be tapped by accident.
+// Settings popup — centered modal with a dimmed, blurred backdrop. Houses
+// the destructive "Clear All Data" action and sign-out, kept out of the
+// main header so they can't be tapped by accident.
 export default function SettingsModal({
   onClose,
   onClearData,
@@ -14,11 +14,11 @@ export default function SettingsModal({
 }) {
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+      className="animate-fade-in fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
       onClick={onClose}
     >
       <div
-        className="w-full max-w-sm rounded-2xl bg-white p-5 shadow-xl dark:bg-gray-900"
+        className="animate-modal-pop w-full max-w-sm rounded-2xl border border-black/5 bg-white p-5 shadow-2xl shadow-black/10 dark:border-white/10 dark:bg-gray-900 dark:shadow-black/40"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-5 flex items-center justify-between">
@@ -27,7 +27,7 @@ export default function SettingsModal({
             type="button"
             onClick={onClose}
             aria-label="بستن"
-            className="inline-flex shrink-0 items-center justify-center rounded-full p-2 text-gray-400 transition-colors hover:bg-gray-100 dark:hover:bg-gray-800"
+            className="inline-flex shrink-0 items-center justify-center rounded-full p-2.5 text-gray-400 transition-all duration-150 ease-out hover:bg-gray-100 active:scale-90 active:opacity-70 dark:hover:bg-gray-800"
           >
             <Icon name="close" className="text-[20px]" />
           </button>
@@ -67,7 +67,7 @@ export default function SettingsModal({
           <button
             type="button"
             onClick={onClearData}
-            className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-red-500 py-3.5 text-base font-bold text-red-500 transition active:scale-95 dark:border-red-500/70 dark:text-red-400"
+            className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-red-500 py-3.5 text-base font-bold text-red-500 transition-all duration-150 ease-out active:scale-[0.97] active:opacity-80 dark:border-red-500/70 dark:text-red-400"
           >
             <Icon name="delete_forever" className="text-[20px]" />
             پاک کردن تمام اطلاعات
@@ -76,7 +76,7 @@ export default function SettingsModal({
           <button
             type="button"
             onClick={onLogout}
-            className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-gray-300 py-3.5 text-base font-bold text-gray-600 transition active:scale-95 dark:border-gray-700 dark:text-gray-300"
+            className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-gray-300 py-3.5 text-base font-bold text-gray-600 transition-all duration-150 ease-out active:scale-[0.97] active:opacity-80 dark:border-gray-700 dark:text-gray-300"
           >
             <Icon name="logout" className="text-[20px]" />
             خروج

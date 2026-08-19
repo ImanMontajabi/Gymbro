@@ -36,7 +36,7 @@ export default function ExerciseChart({ exerciseName, history }) {
     .filter(Boolean)
 
   return (
-    <div className="mt-3 rounded-xl border border-gray-100 bg-gray-50/60 p-3 dark:border-gray-800 dark:bg-gray-800/40">
+    <div className="animate-fade-slide-in mt-3 rounded-xl border border-black/5 bg-gray-50/60 p-3 shadow-inner dark:border-white/10 dark:bg-gray-800/40">
       {chartData.length === 0 ? (
         <p className="py-6 text-center text-sm text-gray-400 dark:text-gray-500">
           هنوز داده‌ی کافی برای این حرکت ثبت نشده

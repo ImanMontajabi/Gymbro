@@ -63,7 +63,7 @@ export default function AiCoachTab({
             type="button"
             onClick={() => requestAnalysis(routines, history)}
             disabled={isLoading}
-            className="flex items-center justify-center gap-2 rounded-xl bg-purple-600 py-4 text-lg font-bold text-white transition disabled:cursor-not-allowed disabled:bg-gray-300 disabled:text-gray-500 dark:disabled:bg-gray-800 dark:disabled:text-gray-600"
+            className="flex items-center justify-center gap-2 rounded-xl bg-purple-600 py-4 text-lg font-bold text-white shadow-md shadow-purple-600/20 transition-all duration-150 ease-out active:scale-[0.98] active:opacity-80 disabled:cursor-not-allowed disabled:bg-gray-300 disabled:text-gray-500 disabled:shadow-none dark:disabled:bg-gray-800 dark:disabled:text-gray-600"
           >
             {isLoading && (
               <span className="h-5 w-5 animate-spin rounded-full border-2 border-white/70 border-t-transparent dark:border-gray-500" />
@@ -73,7 +73,7 @@ export default function AiCoachTab({
           </button>
 
           {isLoading && (
-            <div className="flex flex-col gap-2 rounded-2xl bg-white p-4 shadow-sm dark:bg-gray-900">
+            <div className="animate-fade-slide-in flex flex-col gap-2 rounded-2xl border border-black/5 bg-white p-4 shadow-md shadow-black/5 dark:border-white/10 dark:bg-gray-900 dark:shadow-black/20">
               <div className="h-4 w-3/4 animate-pulse rounded-full bg-gray-200 dark:bg-gray-800" />
               <div className="h-4 w-full animate-pulse rounded-full bg-gray-200 dark:bg-gray-800" />
               <div className="h-4 w-5/6 animate-pulse rounded-full bg-gray-200 dark:bg-gray-800" />
@@ -82,7 +82,7 @@ export default function AiCoachTab({
           )}
 
           {!isLoading && analysis && (
-            <div className="rounded-2xl border border-purple-300 bg-purple-50 p-4 shadow-sm dark:border-purple-500/30 dark:bg-purple-500/10">
+            <div className="animate-fade-slide-in rounded-2xl border border-purple-300 bg-purple-50 p-4 shadow-md shadow-purple-900/5 dark:border-purple-500/30 dark:bg-purple-500/10 dark:shadow-black/20">
               <div className="mb-2 flex items-center gap-2 text-sm font-bold text-purple-700 dark:text-purple-300">
                 <Icon name="auto_awesome" className="text-[18px]" />
                 تحلیل مربی هوشمند
@@ -94,7 +94,7 @@ export default function AiCoachTab({
           )}
 
           {!isLoading && !analysis && (
-            <p className="rounded-2xl bg-white p-4 text-center text-sm text-gray-400 shadow-sm dark:bg-gray-900 dark:text-gray-500">
+            <p className="rounded-2xl border border-black/5 bg-white p-4 text-center text-sm text-gray-400 shadow-md shadow-black/5 dark:border-white/10 dark:bg-gray-900 dark:text-gray-500 dark:shadow-black/20">
               برای دریافت تحلیل عملکرد و پیشنهادهای شخصی‌سازی‌شده، دکمه بالا را بزنید
             </p>
           )}

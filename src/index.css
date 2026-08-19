@@ -17,3 +17,58 @@ body {
     'GRAD' 0,
     'opsz' 24;
 }
+
+/* Entrance micro-animations for newly-mounted rows/cards/modals — gives
+   adding a set, expanding a chart, or opening a modal a soft native feel
+   instead of a rigid snap. Keyed elements only animate once, on mount, so
+   re-renders (e.g. a drag reorder) don't replay them. */
+@keyframes fade-slide-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes modal-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-fade-slide-in {
+  animation: fade-slide-in 0.25s ease-out;
+}
+
+.animate-fade-in {
+  animation: fade-in 0.15s ease-out;
+}
+
+.animate-modal-pop {
+  animation: modal-pop 0.2s ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-fade-slide-in,
+  .animate-fade-in,
+  .animate-modal-pop {
+    animation: none;
+  }
+}

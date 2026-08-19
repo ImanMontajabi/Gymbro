@@ -26,14 +26,14 @@ export default function NameEditRow({ initialValue, placeholder, onSave, onCance
             save()
           }
         }}
-        className="min-w-0 flex-1 rounded-lg border border-purple-400 bg-gray-50 px-3 py-3 text-base text-gray-900 focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-60 dark:bg-gray-800 dark:text-gray-100"
+        className="min-w-0 flex-1 rounded-lg border border-purple-400 bg-gray-50 px-3 py-3.5 text-base text-gray-900 focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-60 dark:bg-gray-800 dark:text-gray-100"
       />
       <button
         type="button"
         onClick={save}
         disabled={isSaving}
         aria-label="ذخیره"
-        className="inline-flex shrink-0 items-center justify-center rounded-full p-3 text-green-600 transition-colors hover:bg-gray-100 disabled:opacity-60 dark:text-green-400 dark:hover:bg-gray-800"
+        className="inline-flex shrink-0 items-center justify-center rounded-full p-3.5 text-green-600 transition-all duration-150 ease-out hover:bg-gray-100 active:scale-90 active:opacity-70 disabled:opacity-60 dark:text-green-400 dark:hover:bg-gray-800"
       >
         {isSaving ? (
           <span className="block h-5 w-5 animate-spin rounded-full border-2 border-green-600 border-t-transparent dark:border-green-400" />
@@ -46,7 +46,7 @@ export default function NameEditRow({ initialValue, placeholder, onSave, onCance
         onClick={onCancel}
         disabled={isSaving}
         aria-label="لغو"
-        className="inline-flex shrink-0 items-center justify-center rounded-full p-3 text-gray-400 transition-colors hover:bg-gray-100 hover:text-red-500 disabled:opacity-60 dark:hover:bg-gray-800"
+        className="inline-flex shrink-0 items-center justify-center rounded-full p-3.5 text-gray-400 transition-all duration-150 ease-out hover:bg-gray-100 hover:text-red-500 active:scale-90 active:opacity-70 disabled:opacity-60 dark:hover:bg-gray-800"
       >
         <Icon name="close" className="text-[20px]" />
       </button>

@@ -41,7 +41,7 @@ export default function AuthScreen() {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4 text-gray-900 dark:bg-gray-950 dark:text-gray-100">
-      <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-sm dark:bg-gray-900">
+      <div className="w-full max-w-sm rounded-2xl border border-black/5 bg-white p-6 shadow-md shadow-black/5 dark:border-white/10 dark:bg-gray-900 dark:shadow-black/20">
         <h1 className="mb-1 text-center text-2xl font-bold">جیم برو</h1>
         <p className="mb-6 text-center text-sm text-gray-500 dark:text-gray-400">
           {mode === 'login' ? 'وارد حساب کاربری خود شوید' : 'ایجاد حساب کاربری جدید'}
@@ -90,7 +90,7 @@ export default function AuthScreen() {
           <button
             type="submit"
             disabled={loading}
-            className="mt-2 rounded-xl bg-purple-600 py-4 text-lg font-bold text-white transition disabled:cursor-not-allowed disabled:opacity-60"
+            className="mt-2 rounded-xl bg-purple-600 py-4 text-lg font-bold text-white transition-all duration-150 ease-out active:scale-[0.98] active:opacity-80 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {loading ? '...' : mode === 'login' ? 'ورود' : 'ثبت‌نام'}
           </button>
@@ -99,7 +99,7 @@ export default function AuthScreen() {
         <button
           type="button"
           onClick={toggleMode}
-          className="mt-4 w-full text-center text-sm font-medium text-purple-600 dark:text-purple-400"
+          className="mt-4 w-full rounded-lg py-1.5 text-center text-sm font-medium text-purple-600 transition-all duration-150 ease-out active:scale-[0.97] active:opacity-70 dark:text-purple-400"
         >
           {mode === 'login' ? 'حساب کاربری ندارید؟ ثبت‌نام کنید' : 'قبلاً ثبت‌نام کرده‌اید؟ وارد شوید'}
         </button>

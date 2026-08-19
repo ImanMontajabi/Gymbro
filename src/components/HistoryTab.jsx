@@ -61,7 +61,7 @@ export default function HistoryTab({
         <div className="flex flex-col gap-4">
           <Suspense
             fallback={
-              <div className="h-[19.5rem] animate-pulse rounded-2xl bg-white shadow-sm dark:bg-gray-900" />
+              <div className="h-[19.5rem] animate-pulse rounded-2xl border border-black/5 bg-white shadow-md shadow-black/5 dark:border-white/10 dark:bg-gray-900 dark:shadow-black/20" />
             }
           >
             <ProgressChart
@@ -75,7 +75,7 @@ export default function HistoryTab({
           <section>
             <h2 className="mb-3 text-lg font-bold">تمرین‌های گذشته</h2>
             {history.length === 0 ? (
-              <p className="rounded-2xl bg-white p-4 text-center text-sm text-gray-400 shadow-sm dark:bg-gray-900 dark:text-gray-500">
+              <p className="rounded-2xl border border-black/5 bg-white p-4 text-center text-sm text-gray-400 shadow-md shadow-black/5 dark:border-white/10 dark:bg-gray-900 dark:text-gray-500 dark:shadow-black/20">
                 هنوز تمرینی به پایان نرسانده‌اید
               </p>
             ) : (
@@ -88,7 +88,7 @@ export default function HistoryTab({
                   return (
                     <li
                       key={session.id}
-                      className="rounded-2xl bg-white p-4 shadow-sm dark:bg-gray-900"
+                      className="animate-fade-slide-in rounded-2xl border border-black/5 bg-white p-4 shadow-md shadow-black/5 transition-all duration-200 dark:border-white/10 dark:bg-gray-900 dark:shadow-black/20"
                     >
                       <div className="flex items-center justify-between gap-2">
                         <h3 className="truncate text-base font-bold">{session.routineName}</h3>

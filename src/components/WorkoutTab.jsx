@@ -34,8 +34,8 @@ function SortableSetRow({ set, index, onEdit, onDelete }) {
     <li
       ref={setNodeRef}
       style={style}
-      className={`flex items-center justify-between gap-2 py-2 first:pt-0 last:pb-0 ${
-        isDragging ? 'relative z-10 bg-gray-50 dark:bg-gray-800' : ''
+      className={`animate-fade-slide-in flex items-center justify-between gap-2 py-3 first:pt-0 last:pb-0 ${
+        isDragging ? 'relative z-10 rounded-lg bg-gray-50 shadow-md dark:bg-gray-800' : ''
       }`}
     >
       <div className="flex min-w-0 items-center gap-1">
@@ -44,7 +44,7 @@ function SortableSetRow({ set, index, onEdit, onDelete }) {
           {...attributes}
           {...listeners}
           aria-label="جابجایی ست"
-          className="inline-flex shrink-0 touch-none items-center justify-center rounded-full p-2 text-gray-400 active:cursor-grabbing dark:text-gray-500"
+          className="inline-flex shrink-0 touch-none items-center justify-center rounded-full p-2.5 text-gray-400 transition-all duration-150 ease-out active:scale-90 active:cursor-grabbing active:opacity-70 dark:text-gray-500"
         >
           <Icon name="drag_indicator" className="text-[20px]" />
         </button>
@@ -62,7 +62,7 @@ function SortableSetRow({ set, index, onEdit, onDelete }) {
           type="button"
           onClick={onEdit}
           aria-label="ویرایش ست"
-          className="inline-flex items-center justify-center rounded-full p-2 text-gray-400 transition-colors hover:bg-gray-100 hover:text-purple-600 dark:hover:bg-gray-800"
+          className="inline-flex items-center justify-center rounded-full p-2.5 text-gray-400 transition-all duration-150 ease-out hover:bg-gray-100 hover:text-purple-600 active:scale-90 active:opacity-70 dark:hover:bg-gray-800"
         >
           <Icon name="edit" className="text-[18px]" />
         </button>
@@ -70,7 +70,7 @@ function SortableSetRow({ set, index, onEdit, onDelete }) {
           type="button"
           onClick={onDelete}
           aria-label="حذف ست"
-          className="inline-flex items-center justify-center rounded-full p-2 text-gray-400 transition-colors hover:bg-gray-100 hover:text-red-500 dark:hover:bg-gray-800"
+          className="inline-flex items-center justify-center rounded-full p-2.5 text-gray-400 transition-all duration-150 ease-out hover:bg-gray-100 hover:text-red-500 active:scale-90 active:opacity-70 dark:hover:bg-gray-800"
         >
           <Icon name="close" className="text-[18px]" />
         </button>
@@ -198,7 +198,7 @@ export default function WorkoutTab({
               {routines.map((routine) => (
                 <div
                   key={routine.id}
-                  className="rounded-2xl bg-white p-4 shadow-sm dark:bg-gray-900"
+                  className="animate-fade-slide-in rounded-2xl border border-black/5 bg-white p-4 shadow-md shadow-black/5 transition-all duration-200 dark:border-white/10 dark:bg-gray-900 dark:shadow-black/20"
                 >
                   {editingRoutineId === routine.id ? (
                     <NameEditRow
@@ -211,7 +211,7 @@ export default function WorkoutTab({
                       <button
                         type="button"
                         onClick={() => handleStartRoutine(routine)}
-                        className="flex-1 truncate py-2 text-right text-lg font-bold text-gray-900 dark:text-gray-100"
+                        className="flex-1 truncate rounded-xl py-2 text-right text-lg font-bold text-gray-900 transition-all duration-150 ease-out active:scale-[0.98] active:opacity-70 dark:text-gray-100"
                       >
                         {routine.name}
                       </button>
@@ -219,7 +219,7 @@ export default function WorkoutTab({
                         type="button"
                         onClick={() => setEditingRoutineId(routine.id)}
                         aria-label="ویرایش نام برنامه"
-                        className="inline-flex shrink-0 items-center justify-center rounded-full p-3 text-gray-400 transition-colors hover:bg-gray-100 hover:text-purple-600 dark:hover:bg-gray-800"
+                        className="inline-flex shrink-0 items-center justify-center rounded-full p-3 text-gray-400 transition-all duration-150 ease-out hover:bg-gray-100 hover:text-purple-600 active:scale-90 active:opacity-70 dark:hover:bg-gray-800"
                       >
                         <Icon name="edit" className="text-[20px]" />
                       </button>
@@ -227,7 +227,7 @@ export default function WorkoutTab({
                         type="button"
                         onClick={() => handleDeleteRoutine(routine.id, routine.name)}
                         aria-label="حذف برنامه"
-                        className="inline-flex shrink-0 items-center justify-center rounded-full p-3 text-gray-400 transition-colors hover:bg-gray-100 hover:text-red-500 dark:hover:bg-gray-800"
+                        className="inline-flex shrink-0 items-center justify-center rounded-full p-3 text-gray-400 transition-all duration-150 ease-out hover:bg-gray-100 hover:text-red-500 active:scale-90 active:opacity-70 dark:hover:bg-gray-800"
                       >
                         <Icon name="delete" className="text-[20px]" />
                       </button>
@@ -237,7 +237,7 @@ export default function WorkoutTab({
               ))}
 
               {isAddingRoutine ? (
-                <div className="rounded-2xl bg-white p-4 shadow-sm dark:bg-gray-900">
+                <div className="animate-fade-slide-in rounded-2xl border border-black/5 bg-white p-4 shadow-md shadow-black/5 dark:border-white/10 dark:bg-gray-900 dark:shadow-black/20">
                   <NameEditRow
                     initialValue=""
                     placeholder="مثلاً Push Day"
@@ -250,7 +250,7 @@ export default function WorkoutTab({
                 <button
                   type="button"
                   onClick={() => setIsAddingRoutine(true)}
-                  className="flex items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-gray-300 py-4 text-lg font-bold text-gray-500 transition hover:border-purple-400 hover:text-purple-600 dark:border-gray-700 dark:text-gray-400 dark:hover:border-purple-500 dark:hover:text-purple-400"
+                  className="flex items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-gray-300 py-4 text-lg font-bold text-gray-500 transition-all duration-150 ease-out hover:border-purple-400 hover:text-purple-600 active:scale-[0.98] active:opacity-80 dark:border-gray-700 dark:text-gray-400 dark:hover:border-purple-500 dark:hover:text-purple-400"
                 >
                   <Icon name="add" className="text-[22px]" />
                   ایجاد برنامه جدید
@@ -288,7 +288,7 @@ export default function WorkoutTab({
             return (
               <div
                 key={ex.exerciseId}
-                className="rounded-2xl bg-white p-4 shadow-sm dark:bg-gray-900"
+                className="animate-fade-slide-in rounded-2xl border border-black/5 bg-white p-4 shadow-md shadow-black/5 transition-all duration-200 dark:border-white/10 dark:bg-gray-900 dark:shadow-black/20"
               >
                 {editingExerciseId === ex.exerciseId ? (
                   <div className="mb-3">
@@ -308,7 +308,7 @@ export default function WorkoutTab({
                         onClick={() => toggleChart(ex.exerciseId)}
                         aria-label="نمودار پیشرفت"
                         aria-expanded={expandedCharts.has(ex.exerciseId)}
-                        className={`inline-flex shrink-0 items-center justify-center rounded-full p-2 transition-colors hover:bg-gray-100 dark:hover:bg-gray-800 ${
+                        className={`inline-flex shrink-0 items-center justify-center rounded-full p-2.5 transition-all duration-150 ease-out hover:bg-gray-100 active:scale-90 active:opacity-70 dark:hover:bg-gray-800 ${
                           expandedCharts.has(ex.exerciseId)
                             ? 'text-purple-600 dark:text-purple-400'
                             : 'text-gray-400 hover:text-purple-600'
@@ -320,7 +320,7 @@ export default function WorkoutTab({
                         type="button"
                         onClick={() => setEditingExerciseId(ex.exerciseId)}
                         aria-label="ویرایش نام حرکت"
-                        className="inline-flex shrink-0 items-center justify-center rounded-full p-2 text-gray-400 transition-colors hover:bg-gray-100 hover:text-purple-600 dark:hover:bg-gray-800"
+                        className="inline-flex shrink-0 items-center justify-center rounded-full p-2.5 text-gray-400 transition-all duration-150 ease-out hover:bg-gray-100 hover:text-purple-600 active:scale-90 active:opacity-70 dark:hover:bg-gray-800"
                       >
                         <Icon name="edit" className="text-[18px]" />
                       </button>
@@ -328,7 +328,7 @@ export default function WorkoutTab({
                         type="button"
                         onClick={() => handleDeleteExercise(ex.exerciseId, ex.exerciseName)}
                         aria-label="حذف حرکت"
-                        className="inline-flex shrink-0 items-center justify-center rounded-full p-2 text-gray-400 transition-colors hover:bg-gray-100 hover:text-red-500 dark:hover:bg-gray-800"
+                        className="inline-flex shrink-0 items-center justify-center rounded-full p-2.5 text-gray-400 transition-all duration-150 ease-out hover:bg-gray-100 hover:text-red-500 active:scale-90 active:opacity-70 dark:hover:bg-gray-800"
                       >
                         <Icon name="delete" className="text-[18px]" />
                       </button>
@@ -351,7 +351,7 @@ export default function WorkoutTab({
                 )}
 
                 {previous && (
-                  <div className="mb-3 rounded-xl border border-purple-300 bg-purple-50 p-3 dark:border-purple-500/30 dark:bg-purple-500/10">
+                  <div className="mb-3 rounded-xl border border-purple-300 bg-purple-50 p-3 shadow-inner dark:border-purple-500/30 dark:bg-purple-500/10">
                     <div className="mb-1 flex items-center justify-between gap-2">
                       <span className="text-sm font-bold text-purple-700 dark:text-purple-300">
                         رکورد جلسه قبل
@@ -398,7 +398,7 @@ export default function WorkoutTab({
                             sanitizeNumericInput(e.target.value, { allowDecimal: true })
                           )
                         }
-                        className="w-full min-w-0 rounded-xl border border-gray-300 bg-gray-50 px-4 py-4 text-lg text-gray-900 placeholder-gray-400 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500"
+                        className="w-full min-w-0 rounded-xl border border-gray-300 bg-gray-50 px-4 py-4 text-lg text-gray-900 placeholder-gray-400 transition-all duration-150 ease-out focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500"
                       />
                     </div>
 
@@ -418,7 +418,7 @@ export default function WorkoutTab({
                         onChange={(e) =>
                           updateDraft(ex.exerciseId, 'reps', sanitizeNumericInput(e.target.value))
                         }
-                        className="w-full min-w-0 rounded-xl border border-gray-300 bg-gray-50 px-4 py-4 text-lg text-gray-900 placeholder-gray-400 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500"
+                        className="w-full min-w-0 rounded-xl border border-gray-300 bg-gray-50 px-4 py-4 text-lg text-gray-900 placeholder-gray-400 transition-all duration-150 ease-out focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500"
                       />
                     </div>
                   </div>
@@ -437,14 +437,14 @@ export default function WorkoutTab({
                       placeholder="مثلاً ست اضافی یا مکث دو ثانیه"
                       value={draft.note}
                       onChange={(e) => updateDraft(ex.exerciseId, 'note', e.target.value)}
-                      className="rounded-xl border border-gray-300 bg-gray-50 px-4 py-4 text-lg text-gray-900 placeholder-gray-400 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500"
+                      className="rounded-xl border border-gray-300 bg-gray-50 px-4 py-4 text-lg text-gray-900 placeholder-gray-400 transition-all duration-150 ease-out focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 dark:placeholder-gray-500"
                     />
                   </div>
 
                   <button
                     type="submit"
                     disabled={!canSubmit || isSubmittingSet}
-                    className="flex items-center justify-center gap-2 rounded-xl bg-purple-600 py-4 text-lg font-bold text-white transition disabled:cursor-not-allowed disabled:bg-gray-300 disabled:text-gray-500 dark:disabled:bg-gray-800 dark:disabled:text-gray-600"
+                    className="flex items-center justify-center gap-2 rounded-xl bg-purple-600 py-4 text-lg font-bold text-white shadow-md shadow-purple-600/20 transition-all duration-150 ease-out active:scale-[0.98] active:opacity-80 disabled:cursor-not-allowed disabled:bg-gray-300 disabled:text-gray-500 disabled:shadow-none dark:disabled:bg-gray-800 dark:disabled:text-gray-600"
                   >
                     {isSubmittingSet && (
                       <span className="h-5 w-5 animate-spin rounded-full border-2 border-white/70 border-t-transparent dark:border-gray-500" />
@@ -454,7 +454,7 @@ export default function WorkoutTab({
                 </form>
 
                 {timer.activeTimer?.exerciseId === ex.exerciseId && (
-                  <div className="mt-3 rounded-xl bg-gray-100 p-3 dark:bg-gray-800">
+                  <div className="animate-fade-slide-in mt-3 rounded-xl border border-black/5 bg-gray-100 p-3 shadow-inner dark:border-white/10 dark:bg-gray-800">
                     <div className="mb-2 flex items-center justify-between gap-2">
                       <span className="text-sm font-bold text-gray-700 dark:text-gray-200">
                         استراحت
@@ -466,7 +466,7 @@ export default function WorkoutTab({
                         <button
                           type="button"
                           onClick={timer.cancelTimer}
-                          className="inline-flex items-center gap-1 rounded-full bg-gray-200 px-3 py-1.5 text-xs font-bold text-gray-600 transition-colors hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
+                          className="inline-flex items-center gap-1 rounded-full bg-gray-200 px-3 py-2 text-xs font-bold text-gray-600 transition-all duration-150 ease-out hover:bg-gray-300 active:scale-90 active:opacity-70 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
                         >
                           <Icon name="close" className="text-[16px]" />
                           لغو
@@ -515,7 +515,7 @@ export default function WorkoutTab({
           })}
 
           {isAddingExercise ? (
-            <div className="rounded-2xl bg-white p-4 shadow-sm dark:bg-gray-900">
+            <div className="animate-fade-slide-in rounded-2xl border border-black/5 bg-white p-4 shadow-md shadow-black/5 dark:border-white/10 dark:bg-gray-900 dark:shadow-black/20">
               <ExerciseEditRow
                 initialName=""
                 initialRestTime={0}
@@ -527,7 +527,7 @@ export default function WorkoutTab({
             <button
               type="button"
               onClick={() => setIsAddingExercise(true)}
-              className="flex items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-gray-300 py-4 text-lg font-bold text-gray-500 transition hover:border-purple-400 hover:text-purple-600 dark:border-gray-700 dark:text-gray-400 dark:hover:border-purple-500 dark:hover:text-purple-400"
+              className="flex items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-gray-300 py-4 text-lg font-bold text-gray-500 transition-all duration-150 ease-out hover:border-purple-400 hover:text-purple-600 active:scale-[0.98] active:opacity-80 dark:border-gray-700 dark:text-gray-400 dark:hover:border-purple-500 dark:hover:text-purple-400"
             >
               <Icon name="add" className="text-[22px]" />
               افزودن حرکت
@@ -538,7 +538,7 @@ export default function WorkoutTab({
         <button
           type="button"
           onClick={handleFinishWorkout}
-          className="mt-6 rounded-xl border-2 border-red-500 py-4 text-lg font-bold text-red-500 transition active:scale-95 dark:border-red-500/70 dark:text-red-400"
+          className="mt-6 rounded-xl border-2 border-red-500 py-4 text-lg font-bold text-red-500 transition-all duration-150 ease-out active:scale-[0.98] active:opacity-80 dark:border-red-500/70 dark:text-red-400"
         >
           پایان تمرین
         </button>
