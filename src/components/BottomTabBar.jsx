@@ -7,6 +7,7 @@ export default function BottomTabBar({ activeTab, onChange }) {
   const tabs = [
     { id: 'workout', label: 'تمرین امروز', icon: 'fitness_center' },
     { id: 'history', label: 'تاریخچه و پیشرفت', icon: 'monitoring' },
+    { id: 'coach', label: 'مربی من', icon: 'auto_awesome' },
   ]
 
   return (

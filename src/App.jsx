@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { lazy, Suspense, useRef, useState } from 'react'
 import { Toaster } from 'react-hot-toast'
 import { useAuth } from './hooks/useAuth'
 import { useDarkMode } from './hooks/useDarkMode'
@@ -8,10 +8,16 @@ import { useRestTimer } from './hooks/useRestTimer'
 import { useRestSound } from './hooks/useRestSound'
 import { useWorkoutData } from './hooks/useWorkoutData'
 import { useProgressChart } from './hooks/useProgressChart'
+import { useAiCoach } from './hooks/useAiCoach'
 import AuthScreen from './components/AuthScreen'
 import LoadingScreen from './components/LoadingScreen'
 import WorkoutTab from './components/WorkoutTab'
 import HistoryTab from './components/HistoryTab'
+
+// react-markdown drags in a sizable markdown/remark toolchain — only worth
+// paying for once the user actually opens the coach tab, so it's split into
+// its own chunk instead of bloating the initial PWA payload.
+const AiCoachTab = lazy(() => import('./components/AiCoachTab'))
 
 const toastOptions = {
   duration: 3000,
@@ -35,7 +41,7 @@ const toastOptions = {
 function App() {
   const { authSession, user, logout } = useAuth()
   const [isDark, setIsDark] = useDarkMode()
-  const [activeTab, setActiveTab] = useState('workout') // 'workout' | 'history'
+  const [activeTab, setActiveTab] = useState('workout') // 'workout' | 'history' | 'coach'
 
   const isOnline = useNetworkStatus()
   const { writeMutation } = useMutationQueue()
@@ -51,6 +57,7 @@ function App() {
     writeMutation,
   })
   const progressChart = useProgressChart(workout.history)
+  const aiCoach = useAiCoach()
 
   const toaster = (
     <Toaster
@@ -107,6 +114,24 @@ function App() {
           activeTab={activeTab}
           onTabChange={setActiveTab}
         />
+      ) : activeTab === 'coach' ? (
+        <Suspense fallback={<LoadingScreen />}>
+          <AiCoachTab
+            aiCoach={aiCoach}
+            routines={workout.routines}
+            history={workout.history}
+            user={user}
+            onLogout={logout}
+            isDark={isDark}
+            onToggleDark={toggleDark}
+            isOnline={isOnline}
+            restSound={restSound}
+            onRestSoundChange={setRestSound}
+            onClearData={workout.handleClearAllData}
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
+          />
+        </Suspense>
       ) : (
         <WorkoutTab
           workout={workout}
