@@ -1,4 +1,7 @@
 import { useState } from 'react'
+import { DndContext, MouseSensor, TouchSensor, closestCenter, useSensor, useSensors } from '@dnd-kit/core'
+import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
 import Icon from './Icon'
 import NameEditRow from './NameEditRow'
 import ExerciseEditRow from './ExerciseEditRow'
@@ -8,6 +11,68 @@ import BottomTabBar from './BottomTabBar'
 import { formatSessionDate } from '../utils/history'
 import { formatTime } from '../utils/time'
 import { sanitizeNumericInput } from '../utils/numbers'
+
+// One row in a set list, draggable via its handle. dnd-kit requires
+// `useSortable` to run inside the item component itself (it can't be called
+// from a loop in the parent), so this is split out rather than inlined.
+function SortableSetRow({ set, index, onEdit, onDelete }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: set.id,
+  })
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  }
+
+  return (
+    <li
+      ref={setNodeRef}
+      style={style}
+      className={`flex items-center justify-between gap-2 py-2 first:pt-0 last:pb-0 ${
+        isDragging ? 'relative z-10 bg-gray-50 dark:bg-gray-800' : ''
+      }`}
+    >
+      <div className="flex min-w-0 items-center gap-1">
+        <button
+          type="button"
+          {...attributes}
+          {...listeners}
+          aria-label="جابجایی ست"
+          className="inline-flex shrink-0 touch-none items-center justify-center rounded-full p-2 text-gray-400 active:cursor-grabbing dark:text-gray-500"
+        >
+          <Icon name="drag_indicator" className="text-[20px]" />
+        </button>
+        <div className="flex min-w-0 flex-col gap-0.5">
+          <span className="truncate text-gray-800 dark:text-gray-200">
+            ست {index + 1}: {set.weight} kg × {set.reps} تکرار
+          </span>
+          {set.note && (
+            <span className="truncate text-sm text-gray-500 dark:text-gray-400">{set.note}</span>
+          )}
+        </div>
+      </div>
+      <div className="flex shrink-0 items-center gap-0.5">
+        <button
+          type="button"
+          onClick={onEdit}
+          aria-label="ویرایش ست"
+          className="inline-flex items-center justify-center rounded-full p-2 text-gray-400 transition-colors hover:bg-gray-100 hover:text-purple-600 dark:hover:bg-gray-800"
+        >
+          <Icon name="edit" className="text-[18px]" />
+        </button>
+        <button
+          type="button"
+          onClick={onDelete}
+          aria-label="حذف ست"
+          className="inline-flex items-center justify-center rounded-full p-2 text-gray-400 transition-colors hover:bg-gray-100 hover:text-red-500 dark:hover:bg-gray-800"
+        >
+          <Icon name="close" className="text-[18px]" />
+        </button>
+      </div>
+    </li>
+  )
+}
 
 // Tab 1: the routine-picker home screen, and the active-workout logging
 // view once a routine is started — the two states the original app treated
@@ -54,10 +119,19 @@ export default function WorkoutTab({
     handleAddSet,
     handleDeleteSet,
     handleEditSet,
-    handleMoveSet,
+    handleReorderSets,
     handleFinishWorkout,
     handleClearAllData,
   } = workout
+
+  // TouchSensor needs a short hold + a bit of movement tolerance before it
+  // activates, so a normal vertical swipe still scrolls the page instead of
+  // starting a drag; MouseSensor needs a small move distance for the same
+  // reason with a trackpad/mouse.
+  const dndSensors = useSensors(
+    useSensor(MouseSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 8 } })
+  )
 
   const settingsModal = isSettingsOpen && (
     <SettingsModal
@@ -368,63 +442,32 @@ export default function WorkoutTab({
                 )}
 
                 {ex.sets.length > 0 && (
-                  <ul className="mt-3 flex flex-col divide-y divide-gray-100 border-t border-gray-100 pt-2 dark:divide-gray-800 dark:border-gray-800">
-                    {ex.sets.map((set, i) => (
-                      <li
-                        key={set.id}
-                        className="flex items-center justify-between gap-3 py-2 first:pt-0 last:pb-0"
-                      >
-                        <div className="flex flex-col gap-0.5">
-                          <span className="text-gray-800 dark:text-gray-200">
-                            ست {i + 1}: {set.weight} kg × {set.reps} تکرار
-                          </span>
-                          {set.note && (
-                            <span className="text-sm text-gray-500 dark:text-gray-400">
-                              {set.note}
-                            </span>
-                          )}
-                        </div>
-                        <div className="flex shrink-0 items-center gap-0.5">
-                          <div className="flex flex-col">
-                            <button
-                              type="button"
-                              onClick={() => handleMoveSet(ex.exerciseId, set.id, -1)}
-                              disabled={i === 0}
-                              aria-label="جابجایی به بالا"
-                              className="inline-flex items-center justify-center rounded-full p-1 text-gray-400 transition-colors hover:bg-gray-100 hover:text-purple-600 disabled:pointer-events-none disabled:opacity-30 dark:hover:bg-gray-800"
-                            >
-                              <Icon name="keyboard_arrow_up" className="text-[18px]" />
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => handleMoveSet(ex.exerciseId, set.id, 1)}
-                              disabled={i === ex.sets.length - 1}
-                              aria-label="جابجایی به پایین"
-                              className="inline-flex items-center justify-center rounded-full p-1 text-gray-400 transition-colors hover:bg-gray-100 hover:text-purple-600 disabled:pointer-events-none disabled:opacity-30 dark:hover:bg-gray-800"
-                            >
-                              <Icon name="keyboard_arrow_down" className="text-[18px]" />
-                            </button>
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => handleEditSet(ex.exerciseId, set.id)}
-                            aria-label="ویرایش ست"
-                            className="inline-flex items-center justify-center rounded-full p-2 text-gray-400 transition-colors hover:bg-gray-100 hover:text-purple-600 dark:hover:bg-gray-800"
-                          >
-                            <Icon name="edit" className="text-[18px]" />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleDeleteSet(ex.exerciseId, set.id)}
-                            aria-label="حذف ست"
-                            className="inline-flex items-center justify-center rounded-full p-2 text-gray-400 transition-colors hover:bg-gray-100 hover:text-red-500 dark:hover:bg-gray-800"
-                          >
-                            <Icon name="close" className="text-[18px]" />
-                          </button>
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
+                  <DndContext
+                    sensors={dndSensors}
+                    collisionDetection={closestCenter}
+                    onDragEnd={({ active, over }) => {
+                      if (over && active.id !== over.id) {
+                        handleReorderSets(ex.exerciseId, active.id, over.id)
+                      }
+                    }}
+                  >
+                    <SortableContext
+                      items={ex.sets.map((set) => set.id)}
+                      strategy={verticalListSortingStrategy}
+                    >
+                      <ul className="mt-3 flex flex-col divide-y divide-gray-100 border-t border-gray-100 pt-2 dark:divide-gray-800 dark:border-gray-800">
+                        {ex.sets.map((set, i) => (
+                          <SortableSetRow
+                            key={set.id}
+                            set={set}
+                            index={i}
+                            onEdit={() => handleEditSet(ex.exerciseId, set.id)}
+                            onDelete={() => handleDeleteSet(ex.exerciseId, set.id)}
+                          />
+                        ))}
+                      </ul>
+                    </SortableContext>
+                  </DndContext>
                 )}
               </div>
             )

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { arrayMove } from '@dnd-kit/sortable'
 import toast from 'react-hot-toast'
 import { supabase } from '../supabase'
 import { findPreviousExercise } from '../utils/history'
@@ -429,20 +430,19 @@ export function useWorkoutData({ user, audioRef, timer, onDataCleared, writeMuta
     }).then(({ error }) => logSupabaseError(error))
   }
 
-  // direction: -1 moves the set up (earlier), +1 moves it down (later).
-  function handleMoveSet(exerciseId, setId, direction) {
+  // Called from a dnd-kit `onDragEnd` handler with the dragged set's id and
+  // the id of the set it was dropped on.
+  function handleReorderSets(exerciseId, activeSetId, overSetId) {
+    if (activeSetId === overSetId) return
+
     const exercise = activeSession.exercises.find((ex) => ex.exerciseId === exerciseId)
     if (!exercise) return
 
-    const index = exercise.sets.findIndex((s) => s.id === setId)
-    const targetIndex = index + direction
-    if (index === -1 || targetIndex < 0 || targetIndex >= exercise.sets.length) return
+    const oldIndex = exercise.sets.findIndex((s) => s.id === activeSetId)
+    const newIndex = exercise.sets.findIndex((s) => s.id === overSetId)
+    if (oldIndex === -1 || newIndex === -1) return
 
-    const reorderedSets = exercise.sets.slice()
-    ;[reorderedSets[index], reorderedSets[targetIndex]] = [
-      reorderedSets[targetIndex],
-      reorderedSets[index],
-    ]
+    const reorderedSets = arrayMove(exercise.sets, oldIndex, newIndex)
 
     const updatedExercises = activeSession.exercises.map((ex) =>
       ex.exerciseId === exerciseId ? { ...ex, sets: reorderedSets } : ex
@@ -552,7 +552,7 @@ export function useWorkoutData({ user, audioRef, timer, onDataCleared, writeMuta
     handleAddSet,
     handleDeleteSet,
     handleEditSet,
-    handleMoveSet,
+    handleReorderSets,
     handleFinishWorkout,
     handleClearAllData,
   }
