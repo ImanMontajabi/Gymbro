@@ -5,9 +5,10 @@ function withinLast30Days(session) {
 }
 
 // Builds a compact, token-efficient plain-text summary of the last 30 days
-// of training for feeding into an LLM prompt. Plain lines instead of nested
-// JSON — the braces/quotes/indentation of JSON cost tokens here without
-// adding signal an LLM needs.
+// of training for feeding into an LLM prompt. Grouped by routine → exercise
+// (rather than a flat exercise list) so the model can produce accurate
+// per-routine, per-exercise feedback instead of guessing which exercise
+// belongs to which routine.
 export function generateWorkoutReport(routines, history) {
   const recentSessions = (history ?? []).filter(withinLast30Days)
 
@@ -15,41 +16,36 @@ export function generateWorkoutReport(routines, history) {
     return 'کاربر در ۳۰ روز اخیر هیچ تمرینی ثبت نکرده است.'
   }
 
-  const routineCounts = {}
-  const exerciseStats = {} // exerciseName -> { maxWeight, totalSets, restTime }
+  // routineName -> exerciseName -> { sets: [{weight, reps}], maxWeight }
+  const routineMap = {}
 
   for (const session of recentSessions) {
-    routineCounts[session.routineName] = (routineCounts[session.routineName] || 0) + 1
+    const exerciseMap = routineMap[session.routineName] || {}
 
     for (const ex of session.exercises) {
-      const stats = exerciseStats[ex.exerciseName] || {
-        maxWeight: 0,
-        totalSets: 0,
-        restTime: ex.restTime || 0,
-      }
-      stats.totalSets += ex.sets.length
+      const stats = exerciseMap[ex.exerciseName] || { sets: [], maxWeight: 0 }
       for (const set of ex.sets) {
+        stats.sets.push({ weight: set.weight, reps: set.reps })
         if (set.weight > stats.maxWeight) stats.maxWeight = set.weight
       }
-      exerciseStats[ex.exerciseName] = stats
+      exerciseMap[ex.exerciseName] = stats
     }
+
+    routineMap[session.routineName] = exerciseMap
   }
 
-  const routineSummary = Object.entries(routineCounts)
-    .map(([name, count]) => `${name} (${count} بار)`)
-    .join('، ')
-
-  const exerciseSummary = Object.entries(exerciseStats)
-    .map(([name, s]) => {
-      const rest = s.restTime > 0 ? `، استراحت ${s.restTime} ثانیه` : ''
-      return `- ${name}: حداکثر وزنه ${s.maxWeight}kg، مجموع ${s.totalSets} ست${rest}`
-    })
-    .join('\n')
+  const routineBlocks = Object.entries(routineMap).map(([routineName, exerciseMap]) => {
+    const exerciseLines = Object.entries(exerciseMap)
+      .map(([exerciseName, stats]) => {
+        const setsText = stats.sets.map((s) => `${s.weight}kg x ${s.reps}`).join(', ')
+        return `- Exercise: ${exerciseName} | Sets: ${setsText} (Max: ${stats.maxWeight}kg)`
+      })
+      .join('\n')
+    return `[Routine: ${routineName}]\n${exerciseLines}`
+  })
 
   return [
     `تعداد جلسات تمرینی در ۳۰ روز اخیر: ${recentSessions.length}`,
-    `برنامه‌های اجرا شده: ${routineSummary}`,
-    `عملکرد به تفکیک حرکت:`,
-    exerciseSummary,
-  ].join('\n')
+    ...routineBlocks,
+  ].join('\n\n')
 }

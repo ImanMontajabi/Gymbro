@@ -53,6 +53,8 @@ export default function WorkoutTab({
     handleDeleteExercise,
     handleAddSet,
     handleDeleteSet,
+    handleEditSet,
+    handleMoveSet,
     handleFinishWorkout,
     handleClearAllData,
   } = workout
@@ -382,14 +384,44 @@ export default function WorkoutTab({
                             </span>
                           )}
                         </div>
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteSet(ex.exerciseId, set.id)}
-                          aria-label="حذف ست"
-                          className="inline-flex shrink-0 items-center justify-center rounded-full p-2 text-gray-400 transition-colors hover:bg-gray-100 hover:text-red-500 dark:hover:bg-gray-800"
-                        >
-                          <Icon name="close" className="text-[18px]" />
-                        </button>
+                        <div className="flex shrink-0 items-center gap-0.5">
+                          <div className="flex flex-col">
+                            <button
+                              type="button"
+                              onClick={() => handleMoveSet(ex.exerciseId, set.id, -1)}
+                              disabled={i === 0}
+                              aria-label="جابجایی به بالا"
+                              className="inline-flex items-center justify-center rounded-full p-1 text-gray-400 transition-colors hover:bg-gray-100 hover:text-purple-600 disabled:pointer-events-none disabled:opacity-30 dark:hover:bg-gray-800"
+                            >
+                              <Icon name="keyboard_arrow_up" className="text-[18px]" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleMoveSet(ex.exerciseId, set.id, 1)}
+                              disabled={i === ex.sets.length - 1}
+                              aria-label="جابجایی به پایین"
+                              className="inline-flex items-center justify-center rounded-full p-1 text-gray-400 transition-colors hover:bg-gray-100 hover:text-purple-600 disabled:pointer-events-none disabled:opacity-30 dark:hover:bg-gray-800"
+                            >
+                              <Icon name="keyboard_arrow_down" className="text-[18px]" />
+                            </button>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => handleEditSet(ex.exerciseId, set.id)}
+                            aria-label="ویرایش ست"
+                            className="inline-flex items-center justify-center rounded-full p-2 text-gray-400 transition-colors hover:bg-gray-100 hover:text-purple-600 dark:hover:bg-gray-800"
+                          >
+                            <Icon name="edit" className="text-[18px]" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteSet(ex.exerciseId, set.id)}
+                            aria-label="حذف ست"
+                            className="inline-flex items-center justify-center rounded-full p-2 text-gray-400 transition-colors hover:bg-gray-100 hover:text-red-500 dark:hover:bg-gray-800"
+                          >
+                            <Icon name="close" className="text-[18px]" />
+                          </button>
+                        </div>
                       </li>
                     ))}
                   </ul>

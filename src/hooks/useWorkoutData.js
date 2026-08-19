@@ -5,6 +5,20 @@ import { findPreviousExercise } from '../utils/history'
 
 const EMPTY_DRAFT = { weight: '', reps: '', note: '' }
 
+// Persists in-progress (unsubmitted) set inputs so a PWA suspend/resume
+// cycle — e.g. switching to a music app and coming back — doesn't wipe out
+// text the user already typed but hadn't submitted yet.
+const DRAFTS_STORAGE_KEY = 'gymbro_drafts'
+
+function loadStoredDrafts() {
+  try {
+    const raw = localStorage.getItem(DRAFTS_STORAGE_KEY)
+    return raw ? JSON.parse(raw) : {}
+  } catch {
+    return {}
+  }
+}
+
 // Maps a `routines` row (with its nested `exercises` rows, snake_case
 // columns) to the shape the rest of the app works with.
 function mapRoutineRow(row) {
@@ -53,7 +67,12 @@ export function useWorkoutData({ user, audioRef, timer, onDataCleared, writeMuta
   const [history, setHistory] = useState([])
   const [activeSession, setActiveSession] = useState(null)
   const [dataLoading, setDataLoading] = useState(true)
-  const [drafts, setDrafts] = useState({}) // { [exerciseId]: { weight, reps, note } }
+  const [drafts, setDrafts] = useState(loadStoredDrafts) // { [exerciseId]: { weight, reps, note } }
+
+  // Mirror every draft change to localStorage so it survives a suspend/kill.
+  useEffect(() => {
+    localStorage.setItem(DRAFTS_STORAGE_KEY, JSON.stringify(drafts))
+  }, [drafts])
 
   const [editingRoutineId, setEditingRoutineId] = useState(null)
   const [isAddingRoutine, setIsAddingRoutine] = useState(false)
@@ -380,6 +399,64 @@ export function useWorkoutData({ user, audioRef, timer, onDataCleared, writeMuta
     }).then(({ error }) => logSupabaseError(error))
   }
 
+  // Pulls a logged set back out of the list and into the input fields so the
+  // user can correct it — it's removed from `sets` (not just displayed for
+  // edit) so re-submitting doesn't create a duplicate; if they cancel by
+  // navigating away, it stays gone rather than silently reappearing.
+  function handleEditSet(exerciseId, setId) {
+    const exercise = activeSession.exercises.find((ex) => ex.exerciseId === exerciseId)
+    const set = exercise?.sets.find((s) => s.id === setId)
+    if (!set) return
+
+    const updatedExercises = activeSession.exercises.map((ex) =>
+      ex.exerciseId === exerciseId ? { ...ex, sets: ex.sets.filter((s) => s.id !== setId) } : ex
+    )
+    setActiveSession({ ...activeSession, exercises: updatedExercises })
+    setDrafts((prev) => ({
+      ...prev,
+      [exerciseId]: {
+        weight: String(set.weight),
+        reps: String(set.reps),
+        note: set.note || '',
+      },
+    }))
+
+    writeMutation({
+      table: 'sessions',
+      type: 'update',
+      payload: { exercises: updatedExercises },
+      match: { column: 'id', value: activeSession.id },
+    }).then(({ error }) => logSupabaseError(error))
+  }
+
+  // direction: -1 moves the set up (earlier), +1 moves it down (later).
+  function handleMoveSet(exerciseId, setId, direction) {
+    const exercise = activeSession.exercises.find((ex) => ex.exerciseId === exerciseId)
+    if (!exercise) return
+
+    const index = exercise.sets.findIndex((s) => s.id === setId)
+    const targetIndex = index + direction
+    if (index === -1 || targetIndex < 0 || targetIndex >= exercise.sets.length) return
+
+    const reorderedSets = exercise.sets.slice()
+    ;[reorderedSets[index], reorderedSets[targetIndex]] = [
+      reorderedSets[targetIndex],
+      reorderedSets[index],
+    ]
+
+    const updatedExercises = activeSession.exercises.map((ex) =>
+      ex.exerciseId === exerciseId ? { ...ex, sets: reorderedSets } : ex
+    )
+    setActiveSession({ ...activeSession, exercises: updatedExercises })
+
+    writeMutation({
+      table: 'sessions',
+      type: 'update',
+      payload: { exercises: updatedExercises },
+      match: { column: 'id', value: activeSession.id },
+    }).then(({ error }) => logSupabaseError(error))
+  }
+
   function handleFinishWorkout() {
     const loggedExercises = activeSession.exercises.filter((ex) => ex.sets.length > 0)
     const sessionId = activeSession.id
@@ -474,6 +551,8 @@ export function useWorkoutData({ user, audioRef, timer, onDataCleared, writeMuta
     handleDeleteExercise,
     handleAddSet,
     handleDeleteSet,
+    handleEditSet,
+    handleMoveSet,
     handleFinishWorkout,
     handleClearAllData,
   }
