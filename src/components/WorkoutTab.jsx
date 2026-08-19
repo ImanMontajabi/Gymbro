@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { Suspense, lazy, useState } from 'react'
 import { DndContext, MouseSensor, TouchSensor, closestCenter, useSensor, useSensors } from '@dnd-kit/core'
 import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
@@ -11,6 +11,11 @@ import BottomTabBar from './BottomTabBar'
 import { formatSessionDate } from '../utils/history'
 import { formatTime } from '../utils/time'
 import { sanitizeNumericInput } from '../utils/numbers'
+
+// recharts is heavy and most exercise cards are never expanded, so it's
+// split into its own chunk instead of bloating WorkoutTab's (unlazy, always
+// rendered) bundle.
+const ExerciseChart = lazy(() => import('./ExerciseChart'))
 
 // One row in a set list, draggable via its handle. dnd-kit requires
 // `useSortable` to run inside the item component itself (it can't be called
@@ -92,9 +97,23 @@ export default function WorkoutTab({
   onTabChange,
 }) {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
+  const [expandedCharts, setExpandedCharts] = useState(() => new Set())
+
+  function toggleChart(exerciseId) {
+    setExpandedCharts((prev) => {
+      const next = new Set(prev)
+      if (next.has(exerciseId)) {
+        next.delete(exerciseId)
+      } else {
+        next.add(exerciseId)
+      }
+      return next
+    })
+  }
 
   const {
     routines,
+    history,
     activeSession,
     previousRecords,
     getDraft,
@@ -286,6 +305,19 @@ export default function WorkoutTab({
                       <h3 className="flex-1 truncate text-lg font-bold">{ex.exerciseName}</h3>
                       <button
                         type="button"
+                        onClick={() => toggleChart(ex.exerciseId)}
+                        aria-label="نمودار پیشرفت"
+                        aria-expanded={expandedCharts.has(ex.exerciseId)}
+                        className={`inline-flex shrink-0 items-center justify-center rounded-full p-2 transition-colors hover:bg-gray-100 dark:hover:bg-gray-800 ${
+                          expandedCharts.has(ex.exerciseId)
+                            ? 'text-purple-600 dark:text-purple-400'
+                            : 'text-gray-400 hover:text-purple-600'
+                        }`}
+                      >
+                        <Icon name="show_chart" className="text-[18px]" />
+                      </button>
+                      <button
+                        type="button"
                         onClick={() => setEditingExerciseId(ex.exerciseId)}
                         aria-label="ویرایش نام حرکت"
                         className="inline-flex shrink-0 items-center justify-center rounded-full p-2 text-gray-400 transition-colors hover:bg-gray-100 hover:text-purple-600 dark:hover:bg-gray-800"
@@ -305,6 +337,15 @@ export default function WorkoutTab({
                       <p className="text-xs text-gray-400 dark:text-gray-500">
                         استراحت پیش‌فرض: {ex.restTime} ثانیه
                       </p>
+                    )}
+                    {expandedCharts.has(ex.exerciseId) && (
+                      <Suspense
+                        fallback={
+                          <div className="mt-3 h-[9.75rem] animate-pulse rounded-xl bg-gray-100 dark:bg-gray-800" />
+                        }
+                      >
+                        <ExerciseChart exerciseName={ex.exerciseName} history={history} />
+                      </Suspense>
                     )}
                   </div>
                 )}
