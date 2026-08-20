@@ -1,7 +1,20 @@
 import { useState } from 'react'
 import { supabase } from '../supabase'
 
-// Email/password sign-in + sign-up screen, shown whenever there's no
+// Maps common Supabase auth error messages to Persian. Falls back to the
+// raw message for anything not covered here.
+function translateAuthError(message) {
+  const map = {
+    'Invalid login credentials': 'ایمیل یا رمز عبور اشتباه است',
+    'User already registered': 'این ایمیل قبلاً ثبت‌نام کرده است',
+    'Password should be at least 6 characters': 'رمز عبور باید حداقل ۶ کاراکتر باشد',
+    'Unable to validate email address: invalid format': 'فرمت ایمیل نامعتبر است',
+    'Email not confirmed': 'ایمیل شما هنوز تایید نشده است',
+  }
+  return map[message] || message
+}
+
+// Classic email/password sign-in + sign-up screen, shown whenever there's no
 // authenticated Supabase session.
 export default function AuthScreen() {
   const [mode, setMode] = useState('login') // 'login' | 'signup'
@@ -25,16 +38,16 @@ export default function AuthScreen() {
     setLoading(false)
 
     if (authError) {
-      setError(authError.message)
+      setError(translateAuthError(authError.message))
       return
     }
-    if (mode === 'signup') {
-      setNotice('ثبت‌نام انجام شد. ایمیل خود را برای تایید حساب بررسی کنید.')
-    }
+    // On success, App.jsx's onAuthStateChange listener picks up the new
+    // session automatically — nothing else to do here.
   }
 
-  function toggleMode() {
-    setMode((m) => (m === 'login' ? 'signup' : 'login'))
+  function switchMode(nextMode) {
+    if (nextMode === mode) return
+    setMode(nextMode)
     setError('')
     setNotice('')
   }
@@ -47,7 +60,36 @@ export default function AuthScreen() {
           {mode === 'login' ? 'وارد حساب کاربری خود شوید' : 'ایجاد حساب کاربری جدید'}
         </p>
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+        <div className="mb-6 flex gap-1 rounded-xl bg-gray-100 p-1 dark:bg-gray-800">
+          <button
+            type="button"
+            onClick={() => switchMode('login')}
+            className={`flex-1 rounded-lg py-2 text-sm font-bold transition-all duration-150 ease-out active:scale-[0.97] ${
+              mode === 'login'
+                ? 'bg-white text-purple-600 shadow-sm dark:bg-gray-700 dark:text-purple-400'
+                : 'text-gray-500 dark:text-gray-400'
+            }`}
+          >
+            ورود
+          </button>
+          <button
+            type="button"
+            onClick={() => switchMode('signup')}
+            className={`flex-1 rounded-lg py-2 text-sm font-bold transition-all duration-150 ease-out active:scale-[0.97] ${
+              mode === 'signup'
+                ? 'bg-white text-purple-600 shadow-sm dark:bg-gray-700 dark:text-purple-400'
+                : 'text-gray-500 dark:text-gray-400'
+            }`}
+          >
+            ثبت‌نام
+          </button>
+        </div>
+
+        <form
+          key={mode}
+          onSubmit={handleSubmit}
+          className="animate-fade-slide-in flex flex-col gap-4"
+        >
           <div className="flex flex-col gap-2">
             <label htmlFor="email" className="text-sm font-medium text-gray-600 dark:text-gray-400">
               ایمیل
@@ -60,7 +102,7 @@ export default function AuthScreen() {
               autoComplete="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="rounded-xl border border-gray-300 bg-gray-50 px-4 py-3.5 text-base text-gray-900 placeholder-gray-400 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
+              className="rounded-xl border border-gray-300 bg-gray-50 px-4 py-3.5 text-base text-gray-900 placeholder-gray-400 transition-all duration-150 ease-out focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
             />
           </div>
 
@@ -80,7 +122,7 @@ export default function AuthScreen() {
               autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="rounded-xl border border-gray-300 bg-gray-50 px-4 py-3.5 text-base text-gray-900 placeholder-gray-400 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
+              className="rounded-xl border border-gray-300 bg-gray-50 px-4 py-3.5 text-base text-gray-900 placeholder-gray-400 transition-all duration-150 ease-out focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
             />
           </div>
 
@@ -90,19 +132,11 @@ export default function AuthScreen() {
           <button
             type="submit"
             disabled={loading}
-            className="mt-2 rounded-xl bg-purple-600 py-4 text-lg font-bold text-white transition-all duration-150 ease-out active:scale-[0.98] active:opacity-80 disabled:cursor-not-allowed disabled:opacity-60"
+            className="mt-2 rounded-xl bg-purple-600 py-4 text-lg font-bold text-white shadow-md shadow-purple-600/20 transition-all duration-150 ease-out active:scale-[0.98] active:opacity-80 disabled:cursor-not-allowed disabled:opacity-60 disabled:shadow-none"
           >
             {loading ? '...' : mode === 'login' ? 'ورود' : 'ثبت‌نام'}
           </button>
         </form>
-
-        <button
-          type="button"
-          onClick={toggleMode}
-          className="mt-4 w-full rounded-lg py-1.5 text-center text-sm font-medium text-purple-600 transition-all duration-150 ease-out active:scale-[0.97] active:opacity-70 dark:text-purple-400"
-        >
-          {mode === 'login' ? 'حساب کاربری ندارید؟ ثبت‌نام کنید' : 'قبلاً ثبت‌نام کرده‌اید؟ وارد شوید'}
-        </button>
       </div>
     </div>
   )
