@@ -44,9 +44,11 @@ export default function LandingPage({ onEnterApp }) {
     <div className="relative flex min-h-screen flex-col overflow-hidden bg-[rgb(var(--ctp-base))] text-[rgb(var(--ctp-text))] transition-colors duration-300">
       <header className="sticky top-0 z-20 flex items-center justify-between border-b border-[rgb(var(--ctp-surface0))] bg-[rgb(var(--ctp-base)/0.7)] px-5 py-4 backdrop-blur-md">
         <div className="flex items-center gap-2">
-          <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[rgb(var(--ctp-surface0))]">
-            <Icon name="pets" className="text-[20px] text-[rgb(var(--ctp-text))]" />
-          </span>
+          <img
+            src="/pwa-192x192.png"
+            alt="Gymbro Logo"
+            className="h-8 w-8 rounded-xl object-contain shadow-sm"
+          />
           <span className="text-lg font-bold">جیم برو</span>
         </div>
 

@@ -181,7 +181,14 @@ export default function WorkoutTab({
         {settingsModal}
         <div className="mx-auto flex min-h-screen max-w-md flex-col px-4 pt-[calc(env(safe-area-inset-top)+1.5rem)] pb-[calc(env(safe-area-inset-bottom)+5.5rem)]">
           <header className="mb-6 flex items-center justify-between">
-            <h1 className="text-2xl font-bold">جیم برو</h1>
+            <div className="flex items-center gap-2">
+              <img
+                src="/pwa-192x192.png"
+                alt="Gymbro Logo"
+                className="h-8 w-8 rounded-xl object-contain shadow-sm"
+              />
+              <h1 className="text-2xl font-bold">جیم برو</h1>
+            </div>
             {headerActions}
           </header>
 
