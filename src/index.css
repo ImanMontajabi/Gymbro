@@ -18,6 +18,53 @@ body {
     'opsz' 24;
 }
 
+/* Catppuccin palette variables, scoped to whichever flavor the landing page
+   currently has set via [data-ctp-theme] on its root element (see
+   LandingPage.jsx). Values are space-separated RGB triplets — not hex or
+   comma-separated rgb() — so Tailwind's `rgb(var(--ctp-x)/<alpha>)`
+   arbitrary-value syntax can apply opacity to them. Official palette:
+   https://catppuccin.com/palette */
+:root,
+[data-ctp-theme='mocha'] {
+  --ctp-base: 30 30 46;
+  --ctp-surface0: 49 50 68;
+  --ctp-text: 205 214 244;
+  --ctp-subtext0: 166 173 200;
+  --ctp-mauve: 203 166 247;
+  --ctp-green: 166 227 161;
+  --ctp-blue: 137 180 250;
+}
+
+[data-ctp-theme='latte'] {
+  --ctp-base: 239 241 245;
+  --ctp-surface0: 204 208 218;
+  --ctp-text: 76 79 105;
+  --ctp-subtext0: 108 111 133;
+  --ctp-mauve: 136 57 239;
+  --ctp-green: 64 160 43;
+  --ctp-blue: 30 102 245;
+}
+
+[data-ctp-theme='frappe'] {
+  --ctp-base: 48 52 70;
+  --ctp-surface0: 65 69 89;
+  --ctp-text: 198 208 245;
+  --ctp-subtext0: 165 173 206;
+  --ctp-mauve: 202 158 230;
+  --ctp-green: 166 209 137;
+  --ctp-blue: 140 170 238;
+}
+
+[data-ctp-theme='macchiato'] {
+  --ctp-base: 36 39 58;
+  --ctp-surface0: 54 58 79;
+  --ctp-text: 202 211 245;
+  --ctp-subtext0: 147 154 183;
+  --ctp-mauve: 198 160 246;
+  --ctp-green: 166 218 149;
+  --ctp-blue: 138 173 244;
+}
+
 /* Entrance micro-animations for newly-mounted rows/cards/modals — gives
    adding a set, expanding a chart, or opening a modal a soft native feel
    instead of a rigid snap. Keyed elements only animate once, on mount, so
