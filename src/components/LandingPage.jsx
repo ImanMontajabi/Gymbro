@@ -1,18 +1,17 @@
 import { useEffect, useState } from 'react'
 import Icon from './Icon'
-
-const CTP_THEMES = ['latte', 'frappe', 'macchiato', 'mocha']
+import ThemeToggle from './ThemeToggle'
 
 // Marketing/landing page shown on the custom domain's root, before the user
 // enters the actual app (AuthScreen). `onEnterApp` is called by both CTAs
 // once the user is ready to proceed — install is a bonus, not a gate.
 //
 // Colors come from Catppuccin (https://catppuccin.com/palette) via the
-// --ctp-* CSS variables defined in index.css, scoped by the [data-ctp-theme]
-// attribute on the root element below. Mocha (dark) is the default; the
-// palette button picks a different flavor at random on each tap.
+// --ctp-* CSS variables defined in index.css, driven by the global
+// [data-ctp-theme] attribute ThemeProvider sets on <html> (see
+// context/ThemeContext.jsx) — the palette button in the header is
+// <ThemeToggle />, shared with AuthScreen and the main app.
 export default function LandingPage({ onEnterApp }) {
-  const [theme, setTheme] = useState('mocha')
   const [installPrompt, setInstallPrompt] = useState(null)
   const [showIosToast, setShowIosToast] = useState(false)
 
@@ -41,16 +40,8 @@ export default function LandingPage({ onEnterApp }) {
     setInstallPrompt(null)
   }
 
-  function handleThemeShuffle() {
-    const options = CTP_THEMES.filter((t) => t !== theme)
-    setTheme(options[Math.floor(Math.random() * options.length)])
-  }
-
   return (
-    <div
-      data-ctp-theme={theme}
-      className="relative flex min-h-screen flex-col overflow-hidden bg-[rgb(var(--ctp-base))] text-[rgb(var(--ctp-text))] transition-colors duration-300"
-    >
+    <div className="relative flex min-h-screen flex-col overflow-hidden bg-[rgb(var(--ctp-base))] text-[rgb(var(--ctp-text))] transition-colors duration-300">
       <header className="sticky top-0 z-20 flex items-center justify-between border-b border-[rgb(var(--ctp-surface0))] bg-[rgb(var(--ctp-base)/0.7)] px-5 py-4 backdrop-blur-md">
         <div className="flex items-center gap-2">
           <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[rgb(var(--ctp-surface0))]">
@@ -60,14 +51,7 @@ export default function LandingPage({ onEnterApp }) {
         </div>
 
         <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={handleThemeShuffle}
-            aria-label="تغییر تم"
-            className="flex h-9 w-9 items-center justify-center rounded-full border border-[rgb(var(--ctp-surface0))] bg-[rgb(var(--ctp-surface0)/0.5)] transition-all duration-150 ease-out active:scale-90 active:opacity-70"
-          >
-            <Icon name="palette" className="text-[18px] text-[rgb(var(--ctp-mauve))]" />
-          </button>
+          <ThemeToggle />
           <button
             type="button"
             onClick={onEnterApp}

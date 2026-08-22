@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { supabase } from '../supabase'
+import ThemeToggle from './ThemeToggle'
 
 // Maps common Supabase auth error messages to Persian. Falls back to the
 // raw message for anything not covered here.
@@ -53,7 +54,10 @@ export default function AuthScreen() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4 text-gray-900 dark:bg-gray-950 dark:text-gray-100">
+    <div className="relative flex min-h-screen items-center justify-center bg-gray-50 px-4 text-gray-900 dark:bg-gray-950 dark:text-gray-100">
+      <div className="absolute top-[max(1rem,env(safe-area-inset-top))] right-4">
+        <ThemeToggle />
+      </div>
       <div className="w-full max-w-sm rounded-2xl border border-black/5 bg-white p-6 shadow-md shadow-black/5 dark:border-white/10 dark:bg-gray-900 dark:shadow-black/20">
         <h1 className="mb-1 text-center text-2xl font-bold">جیم برو</h1>
         <p className="mb-6 text-center text-sm text-gray-500 dark:text-gray-400">

@@ -1,9 +1,10 @@
 import Icon from './Icon'
+import ThemeToggle from './ThemeToggle'
 
-// The settings-gear + dark/light toggle pair shown in every screen's header
-// — was duplicated inline three times in the original monolith; now one
-// component. `isOnline` shows a small warning badge before the two buttons
-// when the device has no connection (see useNetworkStatus).
+// The theme toggle + settings-gear + dark/light toggle trio shown in every
+// screen's header — was duplicated inline three times in the original
+// monolith; now one component. `isOnline` shows a small warning badge before
+// the buttons when the device has no connection (see useNetworkStatus).
 export default function HeaderActions({ isDark, onToggleDark, onOpenSettings, isOnline = true }) {
   return (
     <div className="flex items-center gap-2">
@@ -13,6 +14,7 @@ export default function HeaderActions({ isDark, onToggleDark, onOpenSettings, is
           حالت آفلاین
         </span>
       )}
+      <ThemeToggle />
       <button
         type="button"
         onClick={onOpenSettings}

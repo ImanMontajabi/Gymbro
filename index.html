@@ -5,8 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>جیم برو</title>
 
-    <!-- PWA: theme color for the browser UI/status bar (Android + desktop Chrome) -->
-    <meta name="theme-color" content="#030712" />
+    <!-- PWA: theme color for the browser UI/status bar (Android + desktop
+         Chrome) and the iOS Safari safe-area bars. Default matches the
+         Mocha Catppuccin flavor's Base color; ThemeContext.jsx overwrites
+         this attribute at runtime whenever the active flavor changes. -->
+    <meta name="theme-color" content="#1e1e2e" />
 
     <!-- PWA: iOS home-screen install support — Safari ignores the web
          manifest for these, so they're required here explicitly. -->
@@ -26,7 +29,7 @@
       href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200"
     />
   </head>
-  <body class="bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100">
+  <body>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
