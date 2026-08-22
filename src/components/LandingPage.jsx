@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Icon from './Icon'
 import ThemeToggle from './ThemeToggle'
+import SocialFooter from './SocialFooter'
 
 // Marketing/landing page shown on the custom domain's root, before the user
 // enters the actual app (AuthScreen). Both non-install CTAs navigate to
@@ -105,6 +106,10 @@ export default function LandingPage() {
         <div className="animate-float-breathe hidden h-72 w-72 -translate-y-6 items-center justify-center sm:h-96 sm:w-96 sm:-translate-y-10">
           <Icon name="pets" className="text-[160px] text-[rgb(var(--ctp-text)/0.9)]" />
         </div>
+      </div>
+
+      <div className="relative z-10 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
+        <SocialFooter />
       </div>
 
       <div className="pointer-events-none absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/10 to-transparent" />

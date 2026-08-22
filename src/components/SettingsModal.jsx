@@ -1,4 +1,5 @@
 import Icon from './Icon'
+import SocialFooter from './SocialFooter'
 import { REST_SOUND_OPTIONS } from '../utils/audio'
 
 // Settings popup — centered modal with a dimmed, blurred backdrop. Houses
@@ -79,6 +80,8 @@ export default function SettingsModal({
             خروج
           </button>
         </div>
+
+        <SocialFooter />
       </div>
     </div>
   )
