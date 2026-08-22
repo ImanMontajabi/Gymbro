@@ -16,12 +16,12 @@ function translateAuthError(message) {
   return map[message] || message
 }
 
-// Requires a proper local-part@domain.tld shape with a TLD of at least 2
-// letters — Supabase's own check accepts things like `m@m.g` now that email
-// confirmation is disabled, since it never actually has to deliver mail
-// there. This is a practical filter, not full RFC 5322 validation.
-const EMAIL_REGEX =
-  /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*\.[a-zA-Z]{2,}$/
+// Requires a domain of at least 2 characters and restricts the TLD to a
+// whitelist of common, trusted extensions — Supabase's own check accepts
+// things like `test-iman@m.xc` now that email confirmation is disabled,
+// since it never actually has to deliver mail there. This is a practical
+// spam/fake-account filter, not full RFC 5322 validation.
+const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]{2,}\.(com|org|net|ir|de|io|co|app|me|info)$/i
 
 // Classic email/password sign-in + sign-up screen, shown whenever there's no
 // authenticated Supabase session. `onBack` returns the user to whatever
@@ -40,7 +40,7 @@ export default function AuthScreen({ onBack }) {
     setNotice('')
 
     if (!EMAIL_REGEX.test(email)) {
-      setError('فرمت ایمیل نامعتبر است')
+      setError('فرمت ایمیل نامعتبر است (مثال: user@gmail.com)')
       return
     }
 
