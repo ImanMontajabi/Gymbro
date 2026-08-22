@@ -13,12 +13,13 @@ import AuthScreen from './components/AuthScreen'
 import LandingPage from './components/LandingPage'
 import LoadingScreen from './components/LoadingScreen'
 import WorkoutTab from './components/WorkoutTab'
-import HistoryTab from './components/HistoryTab'
 
-// react-markdown drags in a sizable markdown/remark toolchain — only worth
-// paying for once the user actually opens the coach tab, so it's split into
-// its own chunk instead of bloating the initial PWA payload.
+// react-markdown (AiCoachTab) and react-multi-date-picker (HistoryTab) are
+// both sizable and only needed once the user opens that specific tab, so
+// they're split into their own chunks instead of bloating the initial PWA
+// payload.
 const AiCoachTab = lazy(() => import('./components/AiCoachTab'))
+const HistoryTab = lazy(() => import('./components/HistoryTab'))
 
 // Colors are CSS-variable references, not literals — the browser resolves
 // them against whichever --ctp-* values are active at paint time, so toasts
@@ -74,18 +75,20 @@ function Dashboard({
     <>
       <audio ref={audioRef} src={`/sounds/${restSound}`} preload="auto" />
       {activeTab === 'history' ? (
-        <HistoryTab
-          history={workout.history}
-          progressChart={progressChart}
-          user={user}
-          onLogout={handleLogout}
-          isOnline={isOnline}
-          restSound={restSound}
-          onRestSoundChange={setRestSound}
-          onClearData={workout.handleClearAllData}
-          activeTab={activeTab}
-          onTabChange={setActiveTab}
-        />
+        <Suspense fallback={<LoadingScreen />}>
+          <HistoryTab
+            history={workout.history}
+            progressChart={progressChart}
+            user={user}
+            onLogout={handleLogout}
+            isOnline={isOnline}
+            restSound={restSound}
+            onRestSoundChange={setRestSound}
+            onClearData={workout.handleClearAllData}
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
+          />
+        </Suspense>
       ) : activeTab === 'coach' ? (
         <Suspense fallback={<LoadingScreen />}>
           <AiCoachTab

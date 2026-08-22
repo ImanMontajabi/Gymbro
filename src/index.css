@@ -168,3 +168,87 @@ body,
     animation: none;
   }
 }
+
+/* Recolors react-multi-date-picker's popup calendar (used for the export
+   date range in HistoryTab.jsx) to follow the active Catppuccin flavor.
+   The library injects its own default (non-Catppuccin) colors at runtime,
+   so these rules override its .rmdp-* classes by selector specificity
+   rather than by CSS variables the library itself reads — it has no such
+   variables. Both `className` and `containerClassName` on <DatePicker>
+   are set to "ctp-datepicker", hence the pair of selectors per rule. */
+.ctp-datepicker.rmdp-wrapper,
+.ctp-datepicker .rmdp-wrapper {
+  box-shadow: none;
+}
+
+.ctp-datepicker.rmdp-calendar,
+.ctp-datepicker .rmdp-calendar {
+  background-color: rgb(var(--ctp-surface0));
+  color: rgb(var(--ctp-text));
+  padding: 0.75rem;
+}
+
+.ctp-datepicker .rmdp-shadow {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  border-radius: 0.75rem;
+}
+
+/* The month/year drill-down panels (opened by clicking the header) are
+   absolutely-positioned overlays with their own hardcoded white background
+   in the library's injected default CSS (`.rmdp-month-picker,
+   .rmdp-year-picker{background-color:#fff}`) — they don't inherit
+   .rmdp-calendar's background, so they need their own override. Their day
+   cells reuse the plain .rmdp-day/.rmdp-selected/:hover classes above
+   (text, hover, selected, today), so only the panel background is missing
+   here. */
+.ctp-datepicker .rmdp-month-picker,
+.ctp-datepicker .rmdp-year-picker {
+  background-color: rgb(var(--ctp-surface0));
+}
+
+.ctp-datepicker .rmdp-header-values,
+.ctp-datepicker .rmdp-week-day {
+  color: rgb(var(--ctp-text));
+}
+
+.ctp-datepicker .rmdp-arrow {
+  border-color: rgb(var(--ctp-subtext0));
+}
+
+.ctp-datepicker .rmdp-arrow-container:hover {
+  background-color: rgb(var(--ctp-surface1));
+  box-shadow: none;
+}
+
+.ctp-datepicker .rmdp-day span {
+  color: rgb(var(--ctp-text));
+}
+
+.ctp-datepicker .rmdp-day.rmdp-deactive span,
+.ctp-datepicker .rmdp-day-hidden span {
+  color: rgb(var(--ctp-subtext0) / 0.4);
+}
+
+.ctp-datepicker .rmdp-day:not(.rmdp-disabled):not(.rmdp-day-hidden) span:hover {
+  background-color: rgb(var(--ctp-surface1));
+}
+
+.ctp-datepicker .rmdp-day.rmdp-today span {
+  background-color: rgb(var(--ctp-surface1));
+  color: rgb(var(--ctp-text));
+  box-shadow: none;
+}
+
+/* !important guarantees mauve wins even for the current day/month/year cell,
+   which carries both .rmdp-today and .rmdp-selected — selected already wins
+   on specificity alone, but this removes any doubt for that overlap case. */
+.ctp-datepicker .rmdp-day.rmdp-selected span:not(.highlight) {
+  background-color: rgb(var(--ctp-mauve)) !important;
+  color: rgb(var(--ctp-base)) !important;
+  box-shadow: none;
+}
+
+.ctp-datepicker .rmdp-day.rmdp-range {
+  background-color: rgb(var(--ctp-mauve) / 0.25);
+  box-shadow: none;
+}
