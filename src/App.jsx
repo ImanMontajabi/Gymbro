@@ -10,6 +10,7 @@ import { useWorkoutData } from './hooks/useWorkoutData'
 import { useProgressChart } from './hooks/useProgressChart'
 import { useAiCoach } from './hooks/useAiCoach'
 import AuthScreen from './components/AuthScreen'
+import LandingPage from './components/LandingPage'
 import LoadingScreen from './components/LoadingScreen'
 import WorkoutTab from './components/WorkoutTab'
 import HistoryTab from './components/HistoryTab'
@@ -42,6 +43,15 @@ function App() {
   const { authSession, user, logout } = useAuth()
   const [isDark, setIsDark] = useDarkMode()
   const [activeTab, setActiveTab] = useState('workout') // 'workout' | 'history' | 'coach'
+  // Marketing landing page shown before AuthScreen on first visit. Reset to
+  // true on logout so a signed-out user lands back on it rather than going
+  // straight to the login form.
+  const [showLandingPage, setShowLandingPage] = useState(true)
+
+  function handleLogout() {
+    logout()
+    setShowLandingPage(true)
+  }
 
   const isOnline = useNetworkStatus()
   const { writeMutation } = useMutationQueue()
@@ -80,7 +90,13 @@ function App() {
     return (
       <>
         {toaster}
-        <AuthScreen />
+        <div key={showLandingPage ? 'landing' : 'auth'} className="animate-fade-in">
+          {showLandingPage ? (
+            <LandingPage onEnterApp={() => setShowLandingPage(false)} />
+          ) : (
+            <AuthScreen />
+          )}
+        </div>
       </>
     )
   if (workout.dataLoading)
@@ -104,7 +120,7 @@ function App() {
           history={workout.history}
           progressChart={progressChart}
           user={user}
-          onLogout={logout}
+          onLogout={handleLogout}
           isDark={isDark}
           onToggleDark={toggleDark}
           isOnline={isOnline}
@@ -121,7 +137,7 @@ function App() {
             routines={workout.routines}
             history={workout.history}
             user={user}
-            onLogout={logout}
+            onLogout={handleLogout}
             isDark={isDark}
             onToggleDark={toggleDark}
             isOnline={isOnline}
@@ -137,7 +153,7 @@ function App() {
           workout={workout}
           timer={timer}
           user={user}
-          onLogout={logout}
+          onLogout={handleLogout}
           isDark={isDark}
           onToggleDark={toggleDark}
           isOnline={isOnline}

@@ -53,6 +53,19 @@ body {
   }
 }
 
+/* Slow, gentle breathing motion for the landing page mascot — deliberately
+   subtler/slower than Tailwind's built-in animate-bounce, which reads as a
+   hard drop rather than an idle float. */
+@keyframes float-breathe {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-14px);
+  }
+}
+
 .animate-fade-slide-in {
   animation: fade-slide-in 0.25s ease-out;
 }
@@ -65,10 +78,15 @@ body {
   animation: modal-pop 0.2s ease-out;
 }
 
+.animate-float-breathe {
+  animation: float-breathe 4s ease-in-out infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .animate-fade-slide-in,
   .animate-fade-in,
-  .animate-modal-pop {
+  .animate-modal-pop,
+  .animate-float-breathe {
     animation: none;
   }
 }
