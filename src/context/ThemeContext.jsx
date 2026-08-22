@@ -24,6 +24,12 @@ export function ThemeProvider({ children }) {
 
   useEffect(() => {
     document.documentElement.setAttribute('data-ctp-theme', theme)
+    // Tailwind's `dark` class has no direct equivalent to our --ctp-*
+    // variables, but a couple of things still key off it (namely
+    // @tailwindcss/typography's `prose-invert`, used for the AI coach's
+    // markdown output) — kept in sync with whether the active flavor is
+    // light (Latte) or dark (everything else) rather than toggled manually.
+    document.documentElement.classList.toggle('dark', theme !== 'latte')
     const meta = document.getElementById('theme-color-meta')
     if (meta) meta.setAttribute('content', CTP_BASE_HEX[theme])
   }, [theme])

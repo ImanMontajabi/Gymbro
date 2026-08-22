@@ -1,16 +1,17 @@
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { formatShortDate } from '../utils/history'
 
-// Dark-themed tooltip matching the app's card/toast surfaces.
+// Tooltip styled to match the app's card/toast surfaces via the active
+// Catppuccin flavor rather than a fixed dark palette.
 function ChartTooltip({ active, payload, label }) {
   if (!active || !payload?.length) return null
   return (
     <div
       dir="rtl"
-      className="rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-xs text-gray-100 shadow-lg"
+      className="rounded-lg border border-[rgb(var(--ctp-surface1))] bg-[rgb(var(--ctp-surface0))] px-3 py-2 text-xs text-[rgb(var(--ctp-text))] shadow-lg"
     >
-      <p className="mb-1 text-gray-400">{label}</p>
-      <p className="font-bold text-purple-400">{payload[0].value} kg</p>
+      <p className="mb-1 text-[rgb(var(--ctp-subtext0))]">{label}</p>
+      <p className="font-bold text-[rgb(var(--ctp-mauve))]">{payload[0].value} kg</p>
     </div>
   )
 }
@@ -36,9 +37,9 @@ export default function ExerciseChart({ exerciseName, history }) {
     .filter(Boolean)
 
   return (
-    <div className="animate-fade-slide-in mt-3 rounded-xl border border-black/5 bg-gray-50/60 p-3 shadow-inner dark:border-white/10 dark:bg-gray-800/40">
+    <div className="animate-fade-slide-in mt-3 rounded-xl border border-[rgb(var(--ctp-surface1)/0.4)] bg-[rgb(var(--ctp-mantle)/0.6)] p-3 shadow-inner">
       {chartData.length === 0 ? (
-        <p className="py-6 text-center text-sm text-gray-400 dark:text-gray-500">
+        <p className="py-6 text-center text-sm text-[rgb(var(--ctp-subtext0))]">
           هنوز داده‌ی کافی برای این حرکت ثبت نشده
         </p>
       ) : (
@@ -49,31 +50,28 @@ export default function ExerciseChart({ exerciseName, history }) {
             <LineChart data={chartData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
               <CartesianGrid
                 strokeDasharray="3 3"
-                stroke="currentColor"
+                stroke="rgb(var(--ctp-surface1))"
                 vertical={false}
-                className="text-gray-200 dark:text-gray-700"
               />
               <XAxis
                 dataKey="date"
-                tick={{ fontSize: 10, fill: 'currentColor' }}
+                tick={{ fontSize: 10, fill: 'rgb(var(--ctp-subtext0))' }}
                 axisLine={false}
                 tickLine={false}
-                className="text-gray-500 dark:text-gray-400"
               />
               <YAxis
-                tick={{ fontSize: 10, fill: 'currentColor' }}
+                tick={{ fontSize: 10, fill: 'rgb(var(--ctp-subtext0))' }}
                 axisLine={false}
                 tickLine={false}
                 width={32}
-                className="text-gray-500 dark:text-gray-400"
               />
               <Tooltip content={<ChartTooltip />} />
               <Line
                 type="monotone"
                 dataKey="maxWeight"
-                stroke="#a855f7"
+                stroke="rgb(var(--ctp-mauve))"
                 strokeWidth={2.5}
-                dot={{ r: 3, fill: '#a855f7', strokeWidth: 0 }}
+                dot={{ r: 3, fill: 'rgb(var(--ctp-mauve))', strokeWidth: 0 }}
                 activeDot={{ r: 5 }}
               />
             </LineChart>

@@ -1,7 +1,6 @@
 import { lazy, Suspense, useRef, useState } from 'react'
 import { Toaster } from 'react-hot-toast'
 import { useAuth } from './hooks/useAuth'
-import { useDarkMode } from './hooks/useDarkMode'
 import { useNetworkStatus } from './hooks/useNetworkStatus'
 import { useMutationQueue } from './hooks/useMutationQueue'
 import { useRestTimer } from './hooks/useRestTimer'
@@ -20,19 +19,27 @@ import HistoryTab from './components/HistoryTab'
 // its own chunk instead of bloating the initial PWA payload.
 const AiCoachTab = lazy(() => import('./components/AiCoachTab'))
 
+// Colors are CSS-variable references, not literals — the browser resolves
+// them against whichever --ctp-* values are active at paint time, so toasts
+// follow the current Catppuccin flavor without this object needing to be
+// theme-aware itself.
 const toastOptions = {
   duration: 3000,
   style: {
-    background: '#1f2937',
-    color: '#f3f4f6',
+    background: 'rgb(var(--ctp-surface0))',
+    color: 'rgb(var(--ctp-text))',
     fontFamily: 'Vazirmatn, sans-serif',
     direction: 'rtl',
     borderRadius: '0.75rem',
     padding: '10px 16px',
     fontSize: '0.95rem',
   },
-  success: { iconTheme: { primary: '#a855f7', secondary: '#1f2937' } },
-  error: { iconTheme: { primary: '#ef4444', secondary: '#1f2937' } },
+  success: {
+    iconTheme: { primary: 'rgb(var(--ctp-mauve))', secondary: 'rgb(var(--ctp-surface0))' },
+  },
+  error: {
+    iconTheme: { primary: 'rgb(var(--ctp-red))', secondary: 'rgb(var(--ctp-surface0))' },
+  },
 }
 
 // App shell: owns which tab is active, the single shared <audio> element
@@ -41,7 +48,6 @@ const toastOptions = {
 // composed from hooks/components and handed down as props.
 function App() {
   const { authSession, user, logout } = useAuth()
-  const [isDark, setIsDark] = useDarkMode()
   const [activeTab, setActiveTab] = useState('workout') // 'workout' | 'history' | 'coach'
   // Marketing landing page shown before AuthScreen on first visit. Reset to
   // true on logout so a signed-out user lands back on it rather than going
@@ -63,7 +69,6 @@ function App() {
     user,
     audioRef,
     timer,
-    onDataCleared: () => setIsDark(true),
     writeMutation,
   })
   const progressChart = useProgressChart(workout.history)
@@ -109,8 +114,6 @@ function App() {
 
   // --- Authenticated app --------------------------------------------------
 
-  const toggleDark = () => setIsDark((d) => !d)
-
   return (
     <>
       {toaster}
@@ -121,8 +124,6 @@ function App() {
           progressChart={progressChart}
           user={user}
           onLogout={handleLogout}
-          isDark={isDark}
-          onToggleDark={toggleDark}
           isOnline={isOnline}
           restSound={restSound}
           onRestSoundChange={setRestSound}
@@ -138,8 +139,6 @@ function App() {
             history={workout.history}
             user={user}
             onLogout={handleLogout}
-            isDark={isDark}
-            onToggleDark={toggleDark}
             isOnline={isOnline}
             restSound={restSound}
             onRestSoundChange={setRestSound}
@@ -154,8 +153,6 @@ function App() {
           timer={timer}
           user={user}
           onLogout={handleLogout}
-          isDark={isDark}
-          onToggleDark={toggleDark}
           isOnline={isOnline}
           restSound={restSound}
           onRestSoundChange={setRestSound}

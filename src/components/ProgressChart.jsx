@@ -8,17 +8,17 @@ import {
   YAxis,
 } from 'recharts'
 
-// Dark-themed tooltip for the progress chart, styled to match the app's
-// card/toast surfaces rather than recharts' default light tooltip.
+// Tooltip styled to match the app's card/toast surfaces via the active
+// Catppuccin flavor rather than a fixed dark palette.
 function ChartTooltip({ active, payload, label }) {
   if (!active || !payload?.length) return null
   return (
     <div
       dir="rtl"
-      className="rounded-lg border border-gray-700 bg-gray-800 px-3 py-2 text-xs text-gray-100 shadow-lg"
+      className="rounded-lg border border-[rgb(var(--ctp-surface1))] bg-[rgb(var(--ctp-surface0))] px-3 py-2 text-xs text-[rgb(var(--ctp-text))] shadow-lg"
     >
-      <p className="mb-1 text-gray-400">{label}</p>
-      <p className="font-bold text-purple-400">{payload[0].value} kg</p>
+      <p className="mb-1 text-[rgb(var(--ctp-subtext0))]">{label}</p>
+      <p className="font-bold text-[rgb(var(--ctp-mauve))]">{payload[0].value} kg</p>
     </div>
   )
 }
@@ -33,14 +33,14 @@ export default function ProgressChart({
   chartData,
 }) {
   return (
-    <div className="animate-fade-slide-in rounded-2xl border border-black/5 bg-white p-4 shadow-md shadow-black/5 dark:border-white/10 dark:bg-gray-900 dark:shadow-black/20">
+    <div className="animate-fade-slide-in rounded-2xl border border-[rgb(var(--ctp-surface1)/0.4)] bg-[rgb(var(--ctp-surface0))] p-4 text-[rgb(var(--ctp-text))] shadow-md shadow-black/10">
       <div className="mb-4 flex items-center justify-between gap-2">
         <h2 className="text-lg font-bold">روند پیشرفت</h2>
         {exerciseNames.length > 0 && (
           <select
             value={selectedExercise}
             onChange={(e) => onSelectExercise(e.target.value)}
-            className="min-w-0 max-w-[60%] rounded-xl border border-gray-300 bg-gray-50 px-3 py-2.5 text-sm text-gray-900 transition-all duration-150 ease-out focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500 active:scale-[0.98] dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
+            className="min-w-0 max-w-[60%] rounded-xl border border-[rgb(var(--ctp-surface1)/0.6)] bg-[rgb(var(--ctp-mantle))] px-3 py-2.5 text-sm text-[rgb(var(--ctp-text))] transition-all duration-150 ease-out focus:border-[rgb(var(--ctp-mauve))] focus:outline-none focus:ring-2 focus:ring-[rgb(var(--ctp-mauve))] active:scale-[0.98]"
           >
             {exerciseNames.map((name) => (
               <option key={name} value={name}>
@@ -52,7 +52,7 @@ export default function ProgressChart({
       </div>
 
       {chartData.length === 0 ? (
-        <p className="py-10 text-center text-sm text-gray-400 dark:text-gray-500">
+        <p className="py-10 text-center text-sm text-[rgb(var(--ctp-subtext0))]">
           داده‌ای برای نمایش نمودار موجود نیست
         </p>
       ) : (
@@ -64,38 +64,35 @@ export default function ProgressChart({
             <AreaChart data={chartData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
               <defs>
                 <linearGradient id="progressGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#a855f7" stopOpacity={0.5} />
-                  <stop offset="100%" stopColor="#a855f7" stopOpacity={0} />
+                  <stop offset="0%" stopColor="rgb(var(--ctp-mauve))" stopOpacity={0.5} />
+                  <stop offset="100%" stopColor="rgb(var(--ctp-mauve))" stopOpacity={0} />
                 </linearGradient>
               </defs>
               <CartesianGrid
                 strokeDasharray="3 3"
-                stroke="currentColor"
+                stroke="rgb(var(--ctp-surface1))"
                 vertical={false}
-                className="text-gray-200 dark:text-gray-800"
               />
               <XAxis
                 dataKey="date"
-                tick={{ fontSize: 11, fill: 'currentColor' }}
+                tick={{ fontSize: 11, fill: 'rgb(var(--ctp-subtext0))' }}
                 axisLine={false}
                 tickLine={false}
-                className="text-gray-500 dark:text-gray-400"
               />
               <YAxis
-                tick={{ fontSize: 11, fill: 'currentColor' }}
+                tick={{ fontSize: 11, fill: 'rgb(var(--ctp-subtext0))' }}
                 axisLine={false}
                 tickLine={false}
                 width={36}
-                className="text-gray-500 dark:text-gray-400"
               />
               <Tooltip content={<ChartTooltip />} />
               <Area
                 type="monotone"
                 dataKey="maxWeight"
-                stroke="#a855f7"
+                stroke="rgb(var(--ctp-mauve))"
                 strokeWidth={2.5}
                 fill="url(#progressGradient)"
-                dot={{ r: 3, fill: '#a855f7', strokeWidth: 0 }}
+                dot={{ r: 3, fill: 'rgb(var(--ctp-mauve))', strokeWidth: 0 }}
                 activeDot={{ r: 5 }}
               />
             </AreaChart>

@@ -18,7 +18,7 @@ export default function SettingsModal({
       onClick={onClose}
     >
       <div
-        className="animate-modal-pop w-full max-w-sm rounded-2xl border border-black/5 bg-white p-5 shadow-2xl shadow-black/10 dark:border-white/10 dark:bg-gray-900 dark:shadow-black/40"
+        className="animate-modal-pop w-full max-w-sm rounded-2xl border border-[rgb(var(--ctp-surface1)/0.4)] bg-[rgb(var(--ctp-surface0))] p-5 text-[rgb(var(--ctp-text))] shadow-2xl shadow-black/20"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-5 flex items-center justify-between">
@@ -27,17 +27,14 @@ export default function SettingsModal({
             type="button"
             onClick={onClose}
             aria-label="بستن"
-            className="inline-flex shrink-0 items-center justify-center rounded-full p-2.5 text-gray-400 transition-all duration-150 ease-out hover:bg-gray-100 active:scale-90 active:opacity-70 dark:hover:bg-gray-800"
+            className="inline-flex shrink-0 items-center justify-center rounded-full p-2.5 text-[rgb(var(--ctp-subtext0))] transition-all duration-150 ease-out hover:bg-[rgb(var(--ctp-surface1)/0.5)] active:scale-90 active:opacity-70"
           >
             <Icon name="close" className="text-[20px]" />
           </button>
         </div>
 
         {userEmail && (
-          <p
-            dir="ltr"
-            className="mb-4 truncate text-right text-sm text-gray-500 dark:text-gray-400"
-          >
+          <p dir="ltr" className="mb-4 truncate text-right text-sm text-[rgb(var(--ctp-subtext0))]">
             {userEmail}
           </p>
         )}
@@ -45,7 +42,7 @@ export default function SettingsModal({
         <div className="mb-5 flex flex-col gap-2">
           <label
             htmlFor="rest-sound"
-            className="text-sm font-medium text-gray-600 dark:text-gray-400"
+            className="text-sm font-medium text-[rgb(var(--ctp-subtext0))]"
           >
             صدای زنگ استراحت
           </label>
@@ -53,7 +50,7 @@ export default function SettingsModal({
             id="rest-sound"
             value={restSound}
             onChange={(e) => onRestSoundChange(e.target.value)}
-            className="rounded-xl border border-gray-300 bg-gray-50 px-4 py-3.5 text-base text-gray-900 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
+            className="rounded-xl border border-[rgb(var(--ctp-surface1)/0.6)] bg-[rgb(var(--ctp-mantle))] px-4 py-3.5 text-base text-[rgb(var(--ctp-text))] focus:border-[rgb(var(--ctp-mauve))] focus:outline-none focus:ring-2 focus:ring-[rgb(var(--ctp-mauve))]"
           >
             {REST_SOUND_OPTIONS.map((option) => (
               <option key={option.value} value={option.value}>
@@ -67,7 +64,7 @@ export default function SettingsModal({
           <button
             type="button"
             onClick={onClearData}
-            className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-red-500 py-3.5 text-base font-bold text-red-500 transition-all duration-150 ease-out active:scale-[0.97] active:opacity-80 dark:border-red-500/70 dark:text-red-400"
+            className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-[rgb(var(--ctp-red))] py-3.5 text-base font-bold text-[rgb(var(--ctp-red))] transition-all duration-150 ease-out active:scale-[0.97] active:opacity-80"
           >
             <Icon name="delete_forever" className="text-[20px]" />
             پاک کردن تمام اطلاعات
@@ -76,7 +73,7 @@ export default function SettingsModal({
           <button
             type="button"
             onClick={onLogout}
-            className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-gray-300 py-3.5 text-base font-bold text-gray-600 transition-all duration-150 ease-out active:scale-[0.97] active:opacity-80 dark:border-gray-700 dark:text-gray-300"
+            className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-[rgb(var(--ctp-surface1))] py-3.5 text-base font-bold text-[rgb(var(--ctp-subtext0))] transition-all duration-150 ease-out active:scale-[0.97] active:opacity-80"
           >
             <Icon name="logout" className="text-[20px]" />
             خروج

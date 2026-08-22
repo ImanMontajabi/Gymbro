@@ -69,34 +69,34 @@ export default function AuthScreen({ onBack }) {
   }
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center bg-gray-50 px-4 text-gray-900 dark:bg-gray-950 dark:text-gray-100">
+    <div className="relative flex min-h-screen items-center justify-center bg-[rgb(var(--ctp-base))] px-4 text-[rgb(var(--ctp-text))]">
       <div className="absolute top-[max(1rem,env(safe-area-inset-top))] right-4">
         <ThemeToggle />
       </div>
-      <div className="w-full max-w-sm rounded-2xl border border-black/5 bg-white p-6 shadow-md shadow-black/5 dark:border-white/10 dark:bg-gray-900 dark:shadow-black/20">
+      <div className="w-full max-w-sm rounded-2xl border border-[rgb(var(--ctp-surface1)/0.4)] bg-[rgb(var(--ctp-surface0))] p-6 shadow-md shadow-black/10">
         {onBack && (
           <button
             type="button"
             onClick={onBack}
-            className="mb-4 flex items-center gap-1 rounded-lg py-1 text-sm font-medium text-gray-400 transition-all duration-150 ease-out active:scale-[0.97] active:opacity-70 dark:text-gray-500"
+            className="mb-4 flex items-center gap-1 rounded-lg py-1 text-sm font-medium text-[rgb(var(--ctp-subtext0))] transition-all duration-150 ease-out active:scale-[0.97] active:opacity-70"
           >
             <Icon name="arrow_forward" className="text-[18px]" />
             بازگشت
           </button>
         )}
         <h1 className="mb-1 text-center text-2xl font-bold">جیم برو</h1>
-        <p className="mb-6 text-center text-sm text-gray-500 dark:text-gray-400">
+        <p className="mb-6 text-center text-sm text-[rgb(var(--ctp-subtext0))]">
           {mode === 'login' ? 'وارد حساب کاربری خود شوید' : 'ایجاد حساب کاربری جدید'}
         </p>
 
-        <div className="mb-6 flex gap-1 rounded-xl bg-gray-100 p-1 dark:bg-gray-800">
+        <div className="mb-6 flex gap-1 rounded-xl bg-[rgb(var(--ctp-mantle))] p-1">
           <button
             type="button"
             onClick={() => switchMode('login')}
             className={`flex-1 rounded-lg py-2 text-sm font-bold transition-all duration-150 ease-out active:scale-[0.97] ${
               mode === 'login'
-                ? 'bg-white text-purple-600 shadow-sm dark:bg-gray-700 dark:text-purple-400'
-                : 'text-gray-500 dark:text-gray-400'
+                ? 'bg-[rgb(var(--ctp-surface1))] text-[rgb(var(--ctp-mauve))] shadow-sm'
+                : 'text-[rgb(var(--ctp-subtext0))]'
             }`}
           >
             ورود
@@ -106,8 +106,8 @@ export default function AuthScreen({ onBack }) {
             onClick={() => switchMode('signup')}
             className={`flex-1 rounded-lg py-2 text-sm font-bold transition-all duration-150 ease-out active:scale-[0.97] ${
               mode === 'signup'
-                ? 'bg-white text-purple-600 shadow-sm dark:bg-gray-700 dark:text-purple-400'
-                : 'text-gray-500 dark:text-gray-400'
+                ? 'bg-[rgb(var(--ctp-surface1))] text-[rgb(var(--ctp-mauve))] shadow-sm'
+                : 'text-[rgb(var(--ctp-subtext0))]'
             }`}
           >
             ثبت‌نام
@@ -120,7 +120,7 @@ export default function AuthScreen({ onBack }) {
           className="animate-fade-slide-in flex flex-col gap-4"
         >
           <div className="flex flex-col gap-2">
-            <label htmlFor="email" className="text-sm font-medium text-gray-600 dark:text-gray-400">
+            <label htmlFor="email" className="text-sm font-medium text-[rgb(var(--ctp-subtext0))]">
               ایمیل
             </label>
             <input
@@ -131,14 +131,14 @@ export default function AuthScreen({ onBack }) {
               autoComplete="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="rounded-xl border border-gray-300 bg-gray-50 px-4 py-3.5 text-base text-gray-900 placeholder-gray-400 transition-all duration-150 ease-out focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
+              className="rounded-xl border border-[rgb(var(--ctp-surface1)/0.6)] bg-[rgb(var(--ctp-mantle))] px-4 py-3.5 text-base text-[rgb(var(--ctp-text))] placeholder-[rgb(var(--ctp-subtext0))] transition-all duration-150 ease-out focus:border-[rgb(var(--ctp-mauve))] focus:outline-none focus:ring-2 focus:ring-[rgb(var(--ctp-mauve))]"
             />
           </div>
 
           <div className="flex flex-col gap-2">
             <label
               htmlFor="password"
-              className="text-sm font-medium text-gray-600 dark:text-gray-400"
+              className="text-sm font-medium text-[rgb(var(--ctp-subtext0))]"
             >
               رمز عبور
             </label>
@@ -151,17 +151,17 @@ export default function AuthScreen({ onBack }) {
               autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="rounded-xl border border-gray-300 bg-gray-50 px-4 py-3.5 text-base text-gray-900 placeholder-gray-400 transition-all duration-150 ease-out focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100"
+              className="rounded-xl border border-[rgb(var(--ctp-surface1)/0.6)] bg-[rgb(var(--ctp-mantle))] px-4 py-3.5 text-base text-[rgb(var(--ctp-text))] placeholder-[rgb(var(--ctp-subtext0))] transition-all duration-150 ease-out focus:border-[rgb(var(--ctp-mauve))] focus:outline-none focus:ring-2 focus:ring-[rgb(var(--ctp-mauve))]"
             />
           </div>
 
-          {error && <p className="text-sm text-red-500">{error}</p>}
-          {notice && <p className="text-sm text-green-600 dark:text-green-400">{notice}</p>}
+          {error && <p className="text-sm text-[rgb(var(--ctp-red))]">{error}</p>}
+          {notice && <p className="text-sm text-[rgb(var(--ctp-green))]">{notice}</p>}
 
           <button
             type="submit"
             disabled={loading}
-            className="mt-2 rounded-xl bg-purple-600 py-4 text-lg font-bold text-white shadow-md shadow-purple-600/20 transition-all duration-150 ease-out active:scale-[0.98] active:opacity-80 disabled:cursor-not-allowed disabled:opacity-60 disabled:shadow-none"
+            className="mt-2 rounded-xl bg-[rgb(var(--ctp-mauve))] py-4 text-lg font-bold text-[rgb(var(--ctp-base))] shadow-md shadow-black/20 transition-all duration-150 ease-out active:scale-[0.98] active:opacity-80 disabled:cursor-not-allowed disabled:opacity-60 disabled:shadow-none"
           >
             {loading ? '...' : mode === 'login' ? 'ورود' : 'ثبت‌نام'}
           </button>

@@ -13,7 +13,7 @@ export default function BottomTabBar({ activeTab, onChange }) {
   ]
 
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-black/5 bg-white/80 pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_24px_rgba(0,0,0,0.06)] backdrop-blur-md dark:border-white/10 dark:bg-gray-950/80 dark:shadow-[0_-8px_24px_rgba(0,0,0,0.35)]">
+    <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-[rgb(var(--ctp-surface1)/0.4)] bg-[rgb(var(--ctp-base)/0.8)] pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_24px_rgba(0,0,0,0.2)] backdrop-blur-md">
       <div className="mx-auto flex max-w-md">
         {tabs.map((tab) => (
           <button
@@ -22,8 +22,8 @@ export default function BottomTabBar({ activeTab, onChange }) {
             onClick={() => onChange(tab.id)}
             className={`flex flex-1 flex-col items-center gap-1 py-3 text-xs font-bold transition-all duration-150 ease-out active:scale-95 active:opacity-70 ${
               activeTab === tab.id
-                ? 'text-purple-600 dark:text-purple-400'
-                : 'text-gray-400 dark:text-gray-500'
+                ? 'text-[rgb(var(--ctp-mauve))]'
+                : 'text-[rgb(var(--ctp-subtext0))]'
             }`}
           >
             <Icon name={tab.icon} className="text-[22px]" />
