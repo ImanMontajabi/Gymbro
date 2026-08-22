@@ -94,7 +94,7 @@ function App() {
           {showLandingPage ? (
             <LandingPage onEnterApp={() => setShowLandingPage(false)} />
           ) : (
-            <AuthScreen />
+            <AuthScreen onBack={() => setShowLandingPage(true)} />
           )}
         </div>
       </>

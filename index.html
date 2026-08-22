@@ -2,19 +2,20 @@
 <html lang="fa" dir="rtl" class="dark">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>جیم برو</title>
 
     <!-- PWA: theme color for the browser UI/status bar (Android + desktop
-         Chrome) and the iOS Safari safe-area bars. Default matches the
-         Mocha Catppuccin flavor's Base color; ThemeContext.jsx overwrites
-         this attribute at runtime whenever the active flavor changes. -->
-    <meta name="theme-color" content="#1e1e2e" />
+         Chrome, and Mobile Safari's top toolbar since iOS 15). Default
+         matches the Mocha Catppuccin flavor's Base color; ThemeContext.jsx
+         overwrites this tag's `content` at runtime whenever the active
+         flavor changes, targeting it by id. -->
+    <meta name="theme-color" id="theme-color-meta" content="#1e1e2e" />
 
     <!-- PWA: iOS home-screen install support — Safari ignores the web
          manifest for these, so they're required here explicitly. -->
     <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="apple-mobile-web-app-title" content="GymBro" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
 

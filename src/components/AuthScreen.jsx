@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { supabase } from '../supabase'
+import Icon from './Icon'
 import ThemeToggle from './ThemeToggle'
 
 // Maps common Supabase auth error messages to Persian. Falls back to the
@@ -15,9 +16,17 @@ function translateAuthError(message) {
   return map[message] || message
 }
 
+// Requires a proper local-part@domain.tld shape with a TLD of at least 2
+// letters — Supabase's own check accepts things like `m@m.g` now that email
+// confirmation is disabled, since it never actually has to deliver mail
+// there. This is a practical filter, not full RFC 5322 validation.
+const EMAIL_REGEX =
+  /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*\.[a-zA-Z]{2,}$/
+
 // Classic email/password sign-in + sign-up screen, shown whenever there's no
-// authenticated Supabase session.
-export default function AuthScreen() {
+// authenticated Supabase session. `onBack` returns the user to whatever
+// screen preceded this one (e.g. the landing page).
+export default function AuthScreen({ onBack }) {
   const [mode, setMode] = useState('login') // 'login' | 'signup'
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -29,6 +38,12 @@ export default function AuthScreen() {
     e.preventDefault()
     setError('')
     setNotice('')
+
+    if (!EMAIL_REGEX.test(email)) {
+      setError('فرمت ایمیل نامعتبر است')
+      return
+    }
+
     setLoading(true)
 
     const { error: authError } =
@@ -59,6 +74,16 @@ export default function AuthScreen() {
         <ThemeToggle />
       </div>
       <div className="w-full max-w-sm rounded-2xl border border-black/5 bg-white p-6 shadow-md shadow-black/5 dark:border-white/10 dark:bg-gray-900 dark:shadow-black/20">
+        {onBack && (
+          <button
+            type="button"
+            onClick={onBack}
+            className="mb-4 flex items-center gap-1 rounded-lg py-1 text-sm font-medium text-gray-400 transition-all duration-150 ease-out active:scale-[0.97] active:opacity-70 dark:text-gray-500"
+          >
+            <Icon name="arrow_forward" className="text-[18px]" />
+            بازگشت
+          </button>
+        )}
         <h1 className="mb-1 text-center text-2xl font-bold">جیم برو</h1>
         <p className="mb-6 text-center text-sm text-gray-500 dark:text-gray-400">
           {mode === 'login' ? 'وارد حساب کاربری خود شوید' : 'ایجاد حساب کاربری جدید'}

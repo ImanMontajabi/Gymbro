@@ -4,14 +4,25 @@
 
 html {
   font-family: 'Vazirmatn', sans-serif;
-  min-height: 100dvh;
-  background-color: rgb(var(--ctp-base));
 }
 
 body {
   margin: 0;
-  min-height: 100dvh;
+}
+
+/* Forces the themed background under iOS Safari's top toolbar/status-bar
+   region and the bottom home-indicator safe area — #root is included
+   because Safari can paint the safe-area insets from whichever element
+   is actually laid out edge-to-edge, not just html/body.
+   --ctp-base is a space-separated RGB triplet (see the Catppuccin block
+   below), hence the rgb(...) wrapper rather than using the variable bare. */
+html,
+body,
+#root {
   background-color: rgb(var(--ctp-base));
+  min-height: 100dvh;
+  width: 100%;
+  transition: background-color 0.3s ease;
 }
 
 .material-symbols-outlined {

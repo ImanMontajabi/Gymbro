@@ -24,7 +24,7 @@ export function ThemeProvider({ children }) {
 
   useEffect(() => {
     document.documentElement.setAttribute('data-ctp-theme', theme)
-    const meta = document.querySelector('meta[name="theme-color"]')
+    const meta = document.getElementById('theme-color-meta')
     if (meta) meta.setAttribute('content', CTP_BASE_HEX[theme])
   }, [theme])
 
