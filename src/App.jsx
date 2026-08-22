@@ -1,4 +1,5 @@
 import { lazy, Suspense, useRef, useState } from 'react'
+import { BrowserRouter, Navigate, Route, Routes, useNavigate } from 'react-router-dom'
 import { Toaster } from 'react-hot-toast'
 import { useAuth } from './hooks/useAuth'
 import { useNetworkStatus } from './hooks/useNetworkStatus'
@@ -42,81 +43,35 @@ const toastOptions = {
   },
 }
 
-// App shell: owns which tab is active, the single shared <audio> element
-// used for the rest-timer alarm (and its iOS unlock tap), and the toast
-// host. Everything else — data fetching, CRUD, timers, screens — is
-// composed from hooks/components and handed down as props.
-function App() {
-  const { authSession, user, logout } = useAuth()
+// The authenticated tabbed app (/dashboard). Split into its own component
+// (rather than inlined in App) because it needs useNavigate for the
+// post-logout redirect, and that hook only works on a descendant of
+// <BrowserRouter> — App itself is the one that renders the router, so it
+// can't call the hook directly.
+function Dashboard({
+  user,
+  logout,
+  workout,
+  timer,
+  audioRef,
+  isOnline,
+  restSound,
+  setRestSound,
+  aiCoach,
+}) {
+  const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState('workout') // 'workout' | 'history' | 'coach'
-  // Marketing landing page shown before AuthScreen on first visit. Reset to
-  // true on logout so a signed-out user lands back on it rather than going
-  // straight to the login form.
-  const [showLandingPage, setShowLandingPage] = useState(true)
+  const progressChart = useProgressChart(workout.history)
 
   function handleLogout() {
     logout()
-    setShowLandingPage(true)
+    navigate('/')
   }
 
-  const isOnline = useNetworkStatus()
-  const { writeMutation } = useMutationQueue()
-
-  const audioRef = useRef(null)
-  const timer = useRestTimer(audioRef)
-  const { restSound, setRestSound } = useRestSound(audioRef)
-  const workout = useWorkoutData({
-    user,
-    audioRef,
-    timer,
-    writeMutation,
-  })
-  const progressChart = useProgressChart(workout.history)
-  const aiCoach = useAiCoach()
-
-  const toaster = (
-    <Toaster
-      position="top-center"
-      containerStyle={{ top: 'calc(env(safe-area-inset-top) + 16px)' }}
-      toastOptions={toastOptions}
-    />
-  )
-
-  // --- Auth gate --------------------------------------------------------------
-
-  if (authSession === undefined)
-    return (
-      <>
-        {toaster}
-        <LoadingScreen />
-      </>
-    )
-  if (!user)
-    return (
-      <>
-        {toaster}
-        <div key={showLandingPage ? 'landing' : 'auth'} className="animate-fade-in">
-          {showLandingPage ? (
-            <LandingPage onEnterApp={() => setShowLandingPage(false)} />
-          ) : (
-            <AuthScreen onBack={() => setShowLandingPage(true)} />
-          )}
-        </div>
-      </>
-    )
-  if (workout.dataLoading)
-    return (
-      <>
-        {toaster}
-        <LoadingScreen />
-      </>
-    )
-
-  // --- Authenticated app --------------------------------------------------
+  if (workout.dataLoading) return <LoadingScreen />
 
   return (
     <>
-      {toaster}
       <audio ref={audioRef} src={`/sounds/${restSound}`} preload="auto" />
       {activeTab === 'history' ? (
         <HistoryTab
@@ -161,6 +116,77 @@ function App() {
         />
       )}
     </>
+  )
+}
+
+// App shell: owns the single shared <audio> element used for the rest-timer
+// alarm (and its iOS unlock tap), the toast host, and top-level routing.
+// Everything else — data fetching, CRUD, timers, screens — is composed from
+// hooks/components and handed down as props.
+function App() {
+  const { authSession, user, logout } = useAuth()
+
+  const isOnline = useNetworkStatus()
+  const { writeMutation } = useMutationQueue()
+
+  const audioRef = useRef(null)
+  const timer = useRestTimer(audioRef)
+  const { restSound, setRestSound } = useRestSound(audioRef)
+  const workout = useWorkoutData({
+    user,
+    audioRef,
+    timer,
+    writeMutation,
+  })
+  const aiCoach = useAiCoach()
+
+  const toaster = (
+    <Toaster
+      position="top-center"
+      containerStyle={{ top: 'calc(env(safe-area-inset-top) + 16px)' }}
+      toastOptions={toastOptions}
+    />
+  )
+
+  // authSession is undefined only while the initial Supabase session check
+  // is in flight — nothing about routing can be decided yet.
+  if (authSession === undefined)
+    return (
+      <>
+        {toaster}
+        <LoadingScreen />
+      </>
+    )
+
+  return (
+    <BrowserRouter>
+      {toaster}
+      <Routes>
+        <Route path="/" element={user ? <Navigate to="/dashboard" replace /> : <LandingPage />} />
+        <Route path="/auth" element={user ? <Navigate to="/dashboard" replace /> : <AuthScreen />} />
+        <Route
+          path="/dashboard"
+          element={
+            user ? (
+              <Dashboard
+                user={user}
+                logout={logout}
+                workout={workout}
+                timer={timer}
+                audioRef={audioRef}
+                isOnline={isOnline}
+                restSound={restSound}
+                setRestSound={setRestSound}
+                aiCoach={aiCoach}
+              />
+            ) : (
+              <Navigate to="/" replace />
+            )
+          }
+        />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </BrowserRouter>
   )
 }
 

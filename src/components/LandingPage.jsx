@@ -1,17 +1,19 @@
 import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import Icon from './Icon'
 import ThemeToggle from './ThemeToggle'
 
 // Marketing/landing page shown on the custom domain's root, before the user
-// enters the actual app (AuthScreen). `onEnterApp` is called by both CTAs
-// once the user is ready to proceed — install is a bonus, not a gate.
+// enters the actual app (AuthScreen). Both non-install CTAs navigate to
+// /auth once the user is ready to proceed — install is a bonus, not a gate.
 //
 // Colors come from Catppuccin (https://catppuccin.com/palette) via the
 // --ctp-* CSS variables defined in index.css, driven by the global
 // [data-ctp-theme] attribute ThemeProvider sets on <html> (see
 // context/ThemeContext.jsx) — the palette button in the header is
 // <ThemeToggle />, shared with AuthScreen and the main app.
-export default function LandingPage({ onEnterApp }) {
+export default function LandingPage() {
+  const navigate = useNavigate()
   const [installPrompt, setInstallPrompt] = useState(null)
   const [showIosToast, setShowIosToast] = useState(false)
 
@@ -56,7 +58,7 @@ export default function LandingPage({ onEnterApp }) {
           <ThemeToggle />
           <button
             type="button"
-            onClick={onEnterApp}
+            onClick={() => navigate('/auth')}
             className="rounded-full border border-[rgb(var(--ctp-surface0))] bg-[rgb(var(--ctp-surface0)/0.5)] px-4 py-2 text-sm font-bold transition-all duration-150 ease-out active:scale-95 active:opacity-70"
           >
             ورود به اپلیکیشن
@@ -81,7 +83,7 @@ export default function LandingPage({ onEnterApp }) {
           </button>
           <button
             type="button"
-            onClick={onEnterApp}
+            onClick={() => navigate('/auth')}
             className="flex-1 rounded-full border border-[rgb(var(--ctp-surface0))] bg-[rgb(var(--ctp-surface0)/0.35)] px-5 py-3.5 text-sm font-bold transition-all duration-150 ease-out active:scale-95 active:opacity-70"
           >
             نسخه وب

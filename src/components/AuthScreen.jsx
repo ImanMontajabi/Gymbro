@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { supabase } from '../supabase'
 import Icon from './Icon'
 import ThemeToggle from './ThemeToggle'
@@ -24,9 +25,9 @@ function translateAuthError(message) {
 const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]{2,}\.(com|org|net|ir|de|io|co|app|me|info)$/i
 
 // Classic email/password sign-in + sign-up screen, shown whenever there's no
-// authenticated Supabase session. `onBack` returns the user to whatever
-// screen preceded this one (e.g. the landing page).
-export default function AuthScreen({ onBack }) {
+// authenticated Supabase session.
+export default function AuthScreen() {
+  const navigate = useNavigate()
   const [mode, setMode] = useState('login') // 'login' | 'signup'
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -74,16 +75,14 @@ export default function AuthScreen({ onBack }) {
         <ThemeToggle />
       </div>
       <div className="w-full max-w-sm rounded-2xl border border-[rgb(var(--ctp-surface1)/0.4)] bg-[rgb(var(--ctp-surface0))] p-6 shadow-md shadow-black/10">
-        {onBack && (
-          <button
-            type="button"
-            onClick={onBack}
-            className="mb-4 flex items-center gap-1 rounded-lg py-1 text-sm font-medium text-[rgb(var(--ctp-subtext0))] transition-all duration-150 ease-out active:scale-[0.97] active:opacity-70"
-          >
-            <Icon name="arrow_forward" className="text-[18px]" />
-            بازگشت
-          </button>
-        )}
+        <button
+          type="button"
+          onClick={() => navigate('/')}
+          className="mb-4 flex items-center gap-1 rounded-lg py-1 text-sm font-medium text-[rgb(var(--ctp-subtext0))] transition-all duration-150 ease-out active:scale-[0.97] active:opacity-70"
+        >
+          <Icon name="arrow_forward" className="text-[18px]" />
+          بازگشت
+        </button>
         <h1 className="mb-1 text-center text-2xl font-bold">جیم برو</h1>
         <p className="mb-6 text-center text-sm text-[rgb(var(--ctp-subtext0))]">
           {mode === 'login' ? 'وارد حساب کاربری خود شوید' : 'ایجاد حساب کاربری جدید'}
