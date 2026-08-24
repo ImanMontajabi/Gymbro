@@ -1,49 +1,68 @@
-import { useEffect, useRef } from 'react'
+import { useCallback, useEffect, useRef } from 'react'
+import toast from 'react-hot-toast'
+
+const LOW_POWER_MESSAGE =
+  'برای روشن ماندن صفحه، حالت ذخیره باتری (Low Power Mode) را خاموش کنید'
 
 // Keeps the screen from sleeping for the duration of an active workout via
-// the Screen Wake Lock API. The OS releases the lock automatically whenever
-// the tab is hidden (backgrounded, screen locked, app-switched away), so a
-// visibilitychange listener re-acquires it the moment the tab becomes
-// visible again while a workout is still active — otherwise coming back
-// from the app switcher mid-workout would silently leave the screen
-// unprotected. Unsupported browsers (no `navigator.wakeLock`) just no-op.
+// the Screen Wake Lock API. Mobile browsers are strict about this:
+// - iOS Safari drops the lock the instant the tab is backgrounded (app
+//   switch, screen lock) and never restores it on its own, so a
+//   visibilitychange listener re-acquires it the moment the tab becomes
+//   visible again.
+// - Safari/Chrome on mobile both require the request to happen inside a
+//   real user gesture — an effect firing on state change is often too far
+//   removed from the tap that triggered it. So this hook returns
+//   `requestWakeLock`, meant to be called directly and synchronously from
+//   the onClick/onSubmit handlers that start a workout or log a set, in
+//   addition to the automatic acquire-on-mount/re-acquire-on-visible effect.
+// - In iOS Low Power Mode the request throws NotAllowedError; that's
+//   surfaced to the user once via toast rather than silently failing.
+// Unsupported browsers (no `navigator.wakeLock`) just no-op throughout.
 export function useWakeLock(isActive) {
   const wakeLockRef = useRef(null)
+  const warnedRef = useRef(false)
 
-  useEffect(() => {
-    if (!isActive || !('wakeLock' in navigator)) return
+  const requestWakeLock = useCallback(async () => {
+    if (!('wakeLock' in navigator)) return
+    if (wakeLockRef.current && !wakeLockRef.current.released) return
 
-    let cancelled = false
-
-    async function requestLock() {
-      try {
-        const lock = await navigator.wakeLock.request('screen')
-        if (cancelled) {
-          lock.release().catch(() => {})
-          return
-        }
-        wakeLockRef.current = lock
-      } catch (error) {
-        console.log('Wake lock request failed:', error)
+    try {
+      const lock = await navigator.wakeLock.request('screen')
+      wakeLockRef.current = lock
+      lock.addEventListener('release', () => {
+        if (wakeLockRef.current === lock) wakeLockRef.current = null
+      })
+    } catch (error) {
+      console.log('Wake lock request failed:', error)
+      if (error?.name === 'NotAllowedError' && !warnedRef.current) {
+        warnedRef.current = true
+        toast(LOW_POWER_MESSAGE, { icon: '🔋', duration: 6000 })
       }
     }
+  }, [])
 
-    requestLock()
+  useEffect(() => {
+    if (!isActive) return
 
-    // Always re-request on becoming visible rather than checking whether we
-    // still think we hold a lock — the lock the browser silently released
-    // when the tab was hidden is indistinguishable from a live one just by
-    // looking at our ref.
+    warnedRef.current = false
+    requestWakeLock()
+
+    // Always attempt a fresh request on becoming visible rather than
+    // trusting our ref — the lock the browser silently released while the
+    // tab was hidden is indistinguishable from a live one just by looking
+    // at what we last stored.
     function handleVisibilityChange() {
-      if (document.visibilityState === 'visible') requestLock()
+      if (document.visibilityState === 'visible') requestWakeLock()
     }
     document.addEventListener('visibilitychange', handleVisibilityChange)
 
     return () => {
-      cancelled = true
       document.removeEventListener('visibilitychange', handleVisibilityChange)
       wakeLockRef.current?.release().catch(() => {})
       wakeLockRef.current = null
     }
-  }, [isActive])
+  }, [isActive, requestWakeLock])
+
+  return requestWakeLock
 }
