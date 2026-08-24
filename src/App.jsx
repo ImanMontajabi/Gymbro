@@ -72,6 +72,7 @@ function Dashboard({ user, logout, workout, timer, isOnline, aiCoach }) {
             onLogout={handleLogout}
             isOnline={isOnline}
             onClearData={workout.handleClearAllData}
+            onUpdateHistorySession={workout.handleUpdateHistorySession}
             activeTab={activeTab}
             onTabChange={setActiveTab}
           />

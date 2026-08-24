@@ -1,4 +1,5 @@
 import Icon from './Icon'
+import { useLanguage } from '../context/LanguageContext'
 
 // Fixed bottom navigation switching between the workout flow and the
 // history/analytics tab — sits below all screens, safe-area aware for the
@@ -6,10 +7,11 @@ import Icon from './Icon'
 // surface) so content scrolling underneath stays visible, like a native tab
 // bar, with a soft top shadow for depth instead of a hard line.
 export default function BottomTabBar({ activeTab, onChange }) {
+  const { t } = useLanguage()
   const tabs = [
-    { id: 'workout', label: 'تمرین امروز', icon: 'fitness_center' },
-    { id: 'history', label: 'تاریخچه و پیشرفت', icon: 'monitoring' },
-    { id: 'coach', label: 'مربی من', icon: 'auto_awesome' },
+    { id: 'workout', label: t('navWorkout'), icon: 'fitness_center' },
+    { id: 'history', label: t('navHistory'), icon: 'monitoring' },
+    { id: 'coach', label: t('navCoach'), icon: 'auto_awesome' },
   ]
 
   return (

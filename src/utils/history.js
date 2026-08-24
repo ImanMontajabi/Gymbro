@@ -12,20 +12,29 @@ export function findPreviousExercise(history, exerciseName) {
   return latest
 }
 
-export function formatSessionDate(timestamp) {
-  return new Date(timestamp).toLocaleDateString('fa-IR', {
+const DATE_LOCALE = { fa: 'fa-IR', en: 'en-US', ar: 'ar' }
+
+// `language` defaults to 'fa' so every existing caller (WorkoutTab.jsx,
+// ExerciseChart.jsx, etc. — none of which are language-aware) keeps
+// rendering the Jalali/Persian date it always has. HistoryTab passes the
+// active UI language explicitly to switch to Gregorian for en/ar, matching
+// the react-multi-date-picker calendar switch (see historyDatePickerConfig).
+export function formatSessionDate(timestamp, language = 'fa') {
+  return new Date(timestamp).toLocaleDateString(DATE_LOCALE[language] ?? 'fa-IR', {
     year: 'numeric',
     month: 'long',
     day: 'numeric',
+    calendar: language === 'fa' ? 'persian' : 'gregory',
   })
 }
 
 // Compact `M/D` label for chart axes, where the long form from
 // formatSessionDate would overlap across several data points.
-export function formatShortDate(timestamp) {
-  return new Date(timestamp).toLocaleDateString('fa-IR', {
+export function formatShortDate(timestamp, language = 'fa') {
+  return new Date(timestamp).toLocaleDateString(DATE_LOCALE[language] ?? 'fa-IR', {
     month: 'numeric',
     day: 'numeric',
+    calendar: language === 'fa' ? 'persian' : 'gregory',
   })
 }
 

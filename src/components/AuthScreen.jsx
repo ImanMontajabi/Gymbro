@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { supabase } from '../supabase'
 import Icon from './Icon'
 import ThemeToggle from './ThemeToggle'
+import { useLanguage } from '../context/LanguageContext'
 
 // Maps common Supabase auth error messages to Persian. Falls back to the
 // raw message for anything not covered here.
@@ -28,6 +29,7 @@ const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]{2,}\.(com|org|net|ir|de|io
 // authenticated Supabase session.
 export default function AuthScreen() {
   const navigate = useNavigate()
+  const { t } = useLanguage()
   const [mode, setMode] = useState('login') // 'login' | 'signup'
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -41,7 +43,7 @@ export default function AuthScreen() {
     setNotice('')
 
     if (!EMAIL_REGEX.test(email)) {
-      setError('فرمت ایمیل نامعتبر است (مثال: user@gmail.com)')
+      setError(t('authEmailInvalid'))
       return
     }
 
@@ -81,11 +83,11 @@ export default function AuthScreen() {
           className="mb-4 flex items-center gap-1 rounded-lg py-1 text-sm font-medium text-[rgb(var(--ctp-subtext0))] transition-all duration-150 ease-out active:scale-[0.97] active:opacity-70"
         >
           <Icon name="arrow_forward" className="text-[18px]" />
-          بازگشت
+          {t('authBack')}
         </button>
-        <h1 className="mb-1 text-center text-2xl font-bold">جیم برو</h1>
+        <h1 className="mb-1 text-center text-2xl font-bold">{t('common')}</h1>
         <p className="mb-6 text-center text-sm text-[rgb(var(--ctp-subtext0))]">
-          {mode === 'login' ? 'وارد حساب کاربری خود شوید' : 'ایجاد حساب کاربری جدید'}
+          {mode === 'login' ? t('authLoginTitle') : t('authSignupTitle')}
         </p>
 
         <div className="mb-6 flex gap-1 rounded-xl bg-[rgb(var(--ctp-mantle))] p-1">
@@ -98,7 +100,7 @@ export default function AuthScreen() {
                 : 'text-[rgb(var(--ctp-subtext0))]'
             }`}
           >
-            ورود
+            {t('authLogin')}
           </button>
           <button
             type="button"
@@ -109,7 +111,7 @@ export default function AuthScreen() {
                 : 'text-[rgb(var(--ctp-subtext0))]'
             }`}
           >
-            ثبت‌نام
+            {t('authSignup')}
           </button>
         </div>
 
@@ -120,7 +122,7 @@ export default function AuthScreen() {
         >
           <div className="flex flex-col gap-2">
             <label htmlFor="email" className="text-sm font-medium text-[rgb(var(--ctp-subtext0))]">
-              ایمیل
+              {t('authEmail')}
             </label>
             <input
               id="email"
@@ -139,7 +141,7 @@ export default function AuthScreen() {
               htmlFor="password"
               className="text-sm font-medium text-[rgb(var(--ctp-subtext0))]"
             >
-              رمز عبور
+              {t('authPassword')}
             </label>
             <input
               id="password"
@@ -162,7 +164,7 @@ export default function AuthScreen() {
             disabled={loading}
             className="mt-2 rounded-xl bg-[rgb(var(--ctp-mauve))] py-4 text-lg font-bold text-[rgb(var(--ctp-base))] shadow-md shadow-black/20 transition-all duration-150 ease-out active:scale-[0.98] active:opacity-80 disabled:cursor-not-allowed disabled:opacity-60 disabled:shadow-none"
           >
-            {loading ? '...' : mode === 'login' ? 'ورود' : 'ثبت‌نام'}
+            {loading ? '...' : mode === 'login' ? t('authLogin') : t('authSignup')}
           </button>
         </form>
       </div>

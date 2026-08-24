@@ -486,6 +486,37 @@ export function useWorkoutData({ user, timer, onDataCleared, writeMutation }) {
     timer.cancelTimer()
   }
 
+  // --- Past-session editing (History tab) -----------------------------------
+  //
+  // Deliberately separate from every set/exercise handler above: this only
+  // ever reads/writes the `history` array and the one `sessions` row it
+  // targets by id. It never touches `activeSession`, so editing a past
+  // workout — even one for the same routine as an in-progress session —
+  // cannot corrupt or interfere with the live workout in any way.
+  // Doesn't toast itself (unlike the handlers above) — the caller (the
+  // History edit modal) is language-aware via useLanguage() and shows its
+  // own success/error toast in the active UI language.
+  async function handleUpdateHistorySession(sessionId, updatedExercises) {
+    const { error } = await writeMutation({
+      table: 'sessions',
+      type: 'update',
+      payload: { exercises: updatedExercises },
+      match: { column: 'id', value: sessionId },
+    })
+
+    if (error) {
+      console.error(error)
+      return { error }
+    }
+
+    setHistory((prev) =>
+      prev.map((session) =>
+        session.id === sessionId ? { ...session, exercises: updatedExercises } : session
+      )
+    )
+    return { error: null }
+  }
+
   // Deliberately NOT routed through the offline queue: queuing a "wipe
   // everything" mutation would risk it firing later and deleting workouts
   // logged in the meantime, in an unpredictable order relative to those
@@ -554,5 +585,6 @@ export function useWorkoutData({ user, timer, onDataCleared, writeMutation }) {
     handleReorderSets,
     handleFinishWorkout,
     handleClearAllData,
+    handleUpdateHistorySession,
   }
 }

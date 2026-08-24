@@ -26,7 +26,13 @@ export function useAiCoach() {
   const [analysis, setAnalysis] = useState(null)
   const [isLoading, setIsLoading] = useState(false)
 
-  const requestAnalysis = useCallback(async (routines, history) => {
+  // `goalInstruction`, when given, is a short instructional line prepended
+  // to the report text — see AI_GOAL_INSTRUCTIONS in i18n/translations.js —
+  // so it lands ahead of the "گزارش تمرین:" data in the prompt the
+  // ai-coach Edge Function sends to Gemini (see
+  // supabase/functions/ai-coach/index.ts), steering the analysis toward
+  // that goal without changing the function itself.
+  const requestAnalysis = useCallback(async (routines, history, goalInstruction) => {
     if (!navigator.onLine) {
       toast.error('برای دریافت تحلیل عملکرد به اینترنت متصل شوید')
       return
@@ -34,7 +40,8 @@ export function useAiCoach() {
 
     setIsLoading(true)
     try {
-      const report = generateWorkoutReport(routines, history)
+      const workoutReport = generateWorkoutReport(routines, history)
+      const report = goalInstruction ? `${goalInstruction}\n\n${workoutReport}` : workoutReport
       const result = await fetchWorkoutAnalysis(report)
       setAnalysis(result)
     } catch (error) {

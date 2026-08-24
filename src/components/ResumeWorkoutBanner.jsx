@@ -1,4 +1,5 @@
 import Icon from './Icon'
+import { useLanguage } from '../context/LanguageContext'
 
 // Floating banner shown on the history/coach tabs whenever a workout is
 // still active in the background — the workout tab's back button (see
@@ -7,6 +8,7 @@ import Icon from './Icon'
 // Positioned just above BottomTabBar (fixed, bottom-0) rather than inside
 // the scrolling content so it stays reachable regardless of scroll position.
 export default function ResumeWorkoutBanner({ routineName, onResume }) {
+  const { t } = useLanguage()
   return (
     <div className="pointer-events-none fixed inset-x-0 bottom-[calc(env(safe-area-inset-bottom)+4.75rem)] z-30 px-4">
       <button
@@ -17,12 +19,12 @@ export default function ResumeWorkoutBanner({ routineName, onResume }) {
         <span className="flex min-w-0 items-center gap-2">
           <span className="flex h-2.5 w-2.5 shrink-0 animate-pulse rounded-full bg-[rgb(var(--ctp-base))]" />
           <span className="min-w-0 text-right">
-            <span className="block text-xs font-medium opacity-80">تمرین در جریان</span>
+            <span className="block text-xs font-medium opacity-80">{t('resumeInProgress')}</span>
             <span className="block truncate text-sm font-bold">{routineName}</span>
           </span>
         </span>
         <span className="flex shrink-0 items-center gap-1 text-sm font-bold">
-          ادامه تمرین
+          {t('resumeContinue')}
           <Icon name="chevron_left" className="text-[18px]" />
         </span>
       </button>

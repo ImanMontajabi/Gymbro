@@ -543,13 +543,25 @@ export default function WorkoutTab({
                 </form>
 
                 {timer.activeTimer?.exerciseId === ex.exerciseId && (
-                  <div className="animate-fade-slide-in mt-3 rounded-xl border border-[rgb(var(--ctp-surface1)/0.4)] bg-[rgb(var(--ctp-mantle))] p-3 shadow-inner">
+                  <div
+                    className={`animate-fade-slide-in mt-3 rounded-xl border p-3 shadow-inner transition-colors duration-300 ${
+                      timer.isOverdue
+                        ? 'border-[rgb(var(--ctp-red)/0.5)] bg-[rgb(var(--ctp-red)/0.1)]'
+                        : 'border-[rgb(var(--ctp-surface1)/0.4)] bg-[rgb(var(--ctp-mantle))]'
+                    }`}
+                  >
                     <div className="mb-2 flex items-center justify-between gap-2">
                       <span className="text-sm font-bold text-[rgb(var(--ctp-text))]">
-                        استراحت
+                        {timer.isOverdue ? 'زمان تمام شد' : 'استراحت'}
                       </span>
                       <div className="flex items-center gap-2">
-                        <span className="font-mono text-lg font-bold tabular-nums text-[rgb(var(--ctp-mauve))]">
+                        <span
+                          className={`font-mono text-lg font-bold tabular-nums ${
+                            timer.isOverdue
+                              ? 'animate-pulse text-[rgb(var(--ctp-red))]'
+                              : 'text-[rgb(var(--ctp-mauve))]'
+                          }`}
+                        >
                           {formatTime(timer.remaining)}
                         </span>
                         <button
@@ -564,8 +576,12 @@ export default function WorkoutTab({
                     </div>
                     <div className="h-2 w-full overflow-hidden rounded-full bg-[rgb(var(--ctp-surface1))]">
                       <div
-                        className="h-full rounded-full bg-[rgb(var(--ctp-mauve))] transition-[width] duration-300 ease-linear"
-                        style={{ width: `${(timer.remaining / timer.activeTimer.duration) * 100}%` }}
+                        className={`h-full rounded-full transition-[width] duration-300 ease-linear ${
+                          timer.isOverdue ? 'bg-[rgb(var(--ctp-red))]' : 'bg-[rgb(var(--ctp-mauve))]'
+                        }`}
+                        style={{
+                          width: `${Math.max(0, Math.min(100, (timer.remaining / timer.activeTimer.duration) * 100))}%`,
+                        }}
                       />
                     </div>
                   </div>

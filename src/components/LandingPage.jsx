@@ -2,7 +2,9 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Icon from './Icon'
 import ThemeToggle from './ThemeToggle'
+import LanguageToggle from './LanguageToggle'
 import SocialFooter from './SocialFooter'
+import { useLanguage } from '../context/LanguageContext'
 
 // Marketing/landing page shown on the custom domain's root, before the user
 // enters the actual app (AuthScreen). Both non-install CTAs navigate to
@@ -15,6 +17,7 @@ import SocialFooter from './SocialFooter'
 // <ThemeToggle />, shared with AuthScreen and the main app.
 export default function LandingPage() {
   const navigate = useNavigate()
+  const { t } = useLanguage()
   const [installPrompt, setInstallPrompt] = useState(null)
   const [showIosToast, setShowIosToast] = useState(false)
 
@@ -46,31 +49,34 @@ export default function LandingPage() {
   return (
     <div className="relative flex min-h-screen flex-col overflow-hidden bg-[rgb(var(--ctp-base))] text-[rgb(var(--ctp-text))] transition-colors duration-300">
       <header className="sticky top-0 z-20 flex items-center justify-between border-b border-[rgb(var(--ctp-surface0))] bg-[rgb(var(--ctp-base)/0.7)] px-5 py-4 backdrop-blur-md">
-        <div className="flex items-center gap-2">
+        <div className="flex min-w-0 items-center gap-2">
           <img
             src="/pwa-192x192.png"
             alt="Gymbro Logo"
-            className="h-8 w-8 rounded-xl object-contain shadow-sm"
+            className="h-8 w-8 shrink-0 rounded-xl object-contain shadow-sm"
           />
-          <span className="text-lg font-bold">جیم برو</span>
+          <span className="truncate text-lg font-bold">{t('common')}</span>
+          <LanguageToggle className="shrink-0" />
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex shrink-0 items-center gap-2">
           <ThemeToggle />
           <button
             type="button"
             onClick={() => navigate('/auth')}
             className="rounded-full border border-[rgb(var(--ctp-surface0))] bg-[rgb(var(--ctp-surface0)/0.5)] px-4 py-2 text-sm font-bold transition-all duration-150 ease-out active:scale-95 active:opacity-70"
           >
-            ورود به اپلیکیشن
+            {t('landingEnterApp')}
           </button>
         </div>
       </header>
 
       <main className="relative z-10 mx-auto flex w-full max-w-md flex-1 flex-col items-center px-6 pt-14 text-center">
-        <h1 className="text-5xl leading-[1.15] font-extrabold text-balance">رفیقِ تمرینیِ تو</h1>
+        <h1 className="text-5xl leading-[1.15] font-extrabold text-balance">
+          {t('landingHeadline')}
+        </h1>
         <p className="mt-4 max-w-xs text-base leading-relaxed text-[rgb(var(--ctp-subtext0))]">
-          پیشرفتت رو ست به ست ثبت کن، رکوردهاتو ببین و هیچ‌وقت تمرین امروزت رو گم نکن
+          {t('landingSubtitle')}
         </p>
 
         <div className="mt-8 flex w-full items-center justify-center gap-3">
@@ -80,14 +86,14 @@ export default function LandingPage() {
             className="flex flex-1 items-center justify-center gap-1.5 rounded-full bg-[rgb(var(--ctp-green))] px-5 py-3.5 text-sm font-bold text-[rgb(var(--ctp-base))] shadow-md shadow-black/20 transition-all duration-150 ease-out active:scale-95 active:opacity-80"
           >
             <Icon name="download" className="text-[18px]" />
-            نصب اپلیکیشن
+            {t('landingInstallApp')}
           </button>
           <button
             type="button"
             onClick={() => navigate('/auth')}
             className="flex-1 rounded-full border border-[rgb(var(--ctp-surface0))] bg-[rgb(var(--ctp-surface0)/0.35)] px-5 py-3.5 text-sm font-bold transition-all duration-150 ease-out active:scale-95 active:opacity-70"
           >
-            نسخه وب
+            {t('landingWebVersion')}
           </button>
         </div>
       </main>
@@ -116,7 +122,7 @@ export default function LandingPage() {
 
       {showIosToast && (
         <div className="animate-fade-slide-in fixed inset-x-4 bottom-[max(1.5rem,env(safe-area-inset-bottom))] z-30 mx-auto max-w-sm rounded-2xl border border-[rgb(var(--ctp-surface0))] bg-[rgb(var(--ctp-base)/0.9)] px-4 py-3.5 text-center text-sm font-medium text-[rgb(var(--ctp-text))] shadow-lg shadow-black/30 backdrop-blur-md">
-          در سافاری دکمه Share را بزنید و Add to Home Screen را انتخاب کنید
+          {t('landingIosInstallHint')}
         </div>
       )}
     </div>
