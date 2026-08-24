@@ -1,4 +1,4 @@
-import { Suspense, lazy, useState } from 'react'
+import { Suspense, lazy, useRef, useState } from 'react'
 import { DndContext, MouseSensor, TouchSensor, closestCenter, useSensor, useSensors } from '@dnd-kit/core'
 import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
@@ -79,10 +79,20 @@ function SortableSetRow({ set, index, onEdit, onDelete }) {
   )
 }
 
+// How long "پایان تمرین" must be held before it actually fires — long enough
+// that a stray tap while reaching for another button can't end the workout
+// by accident, short enough not to feel broken.
+const END_WORKOUT_HOLD_MS = 650
+
 // Tab 1: the routine-picker home screen, and the active-workout logging
 // view once a routine is started — the two states the original app treated
 // as one continuous "workout flow". `workout` and `timer` are the full
-// objects returned by useWorkoutData()/useRestTimer() in App.jsx.
+// objects returned by useWorkoutData()/useRestTimer() in App.jsx. Both
+// objects — along with `activeTab`, which lives in the Dashboard component
+// in App.jsx — are already owned above this component, so switching to the
+// history/coach tab mid-workout (via the header back button or the bottom
+// tab bar) never loses the session or the running rest timer; there's
+// nothing here to persist separately.
 export default function WorkoutTab({
   workout,
   timer,
@@ -99,6 +109,26 @@ export default function WorkoutTab({
   // Focus Mode: only one exercise is ever expanded for data entry at a time,
   // so a stray tap mid-set can't land on the wrong exercise's inputs.
   const [activeExerciseId, setActiveExerciseId] = useState(null)
+
+  // "پایان تمرین" only fires after being held for END_WORKOUT_HOLD_MS — the
+  // timeout below does the actual firing, isHoldingEnd just drives the fill
+  // animation. Any release before it fires (pointerup/leave/cancel) clears
+  // the timeout, so the workout is never ended by a normal tap.
+  const [isHoldingEnd, setIsHoldingEnd] = useState(false)
+  const endHoldTimeoutRef = useRef(null)
+
+  function startEndHold() {
+    setIsHoldingEnd(true)
+    endHoldTimeoutRef.current = setTimeout(() => {
+      handleFinishWorkout()
+      setIsHoldingEnd(false)
+    }, END_WORKOUT_HOLD_MS)
+  }
+
+  function cancelEndHold() {
+    clearTimeout(endHoldTimeoutRef.current)
+    setIsHoldingEnd(false)
+  }
 
   function toggleChart(exerciseId) {
     setExpandedCharts((prev) => {
@@ -283,10 +313,20 @@ export default function WorkoutTab({
     <div className="min-h-screen bg-[rgb(var(--ctp-base))] text-[rgb(var(--ctp-text))]">
       {settingsModal}
       <div className="mx-auto flex min-h-screen max-w-md flex-col px-4 pt-[calc(env(safe-area-inset-top)+1.5rem)] pb-[calc(env(safe-area-inset-bottom)+5.5rem)]">
-        <header className="mb-6 flex items-center justify-between">
-          <div className="flex flex-col">
-            <span className="text-sm text-[rgb(var(--ctp-subtext0))]">برنامه</span>
-            <h1 className="text-2xl font-bold">{activeSession.routineName}</h1>
+        <header className="mb-6 flex items-center justify-between gap-2">
+          <div className="flex min-w-0 items-center gap-1">
+            <button
+              type="button"
+              onClick={() => onTabChange('history')}
+              aria-label="خروج موقت از تمرین"
+              className="inline-flex shrink-0 items-center justify-center rounded-full p-2 text-[rgb(var(--ctp-subtext0))] transition-all duration-150 ease-out hover:bg-[rgb(var(--ctp-surface1)/0.5)] hover:text-[rgb(var(--ctp-mauve))] active:scale-90 active:opacity-70"
+            >
+              <Icon name="chevron_right" className="text-[26px]" />
+            </button>
+            <div className="flex min-w-0 flex-col">
+              <span className="text-sm text-[rgb(var(--ctp-subtext0))]">برنامه</span>
+              <h1 className="truncate text-2xl font-bold">{activeSession.routineName}</h1>
+            </div>
           </div>
           {headerActions}
         </header>
@@ -585,10 +625,24 @@ export default function WorkoutTab({
 
         <button
           type="button"
-          onClick={handleFinishWorkout}
-          className="mt-6 rounded-xl border-2 border-[rgb(var(--ctp-red))] py-4 text-lg font-bold text-[rgb(var(--ctp-red))] transition-all duration-150 ease-out active:scale-[0.98] active:opacity-80"
+          onPointerDown={startEndHold}
+          onPointerUp={cancelEndHold}
+          onPointerLeave={cancelEndHold}
+          onPointerCancel={cancelEndHold}
+          onContextMenu={(e) => e.preventDefault()}
+          className="relative mt-6 touch-none select-none overflow-hidden rounded-xl border-2 border-[rgb(var(--ctp-red))] py-4 text-lg font-bold text-[rgb(var(--ctp-red))] transition-transform duration-150 ease-out active:scale-[0.98]"
         >
-          پایان تمرین
+          <span
+            aria-hidden="true"
+            className="absolute inset-y-0 right-0 bg-[rgb(var(--ctp-red)/0.25)]"
+            style={{
+              width: isHoldingEnd ? '100%' : '0%',
+              transition: `width ${isHoldingEnd ? END_WORKOUT_HOLD_MS : 150}ms ${isHoldingEnd ? 'linear' : 'ease-out'}`,
+            }}
+          />
+          <span className="relative">
+            {isHoldingEnd ? 'نگه دارید...' : 'برای پایان، لمس کرده و نگه دارید'}
+          </span>
         </button>
       </div>
       {bottomTabBar}

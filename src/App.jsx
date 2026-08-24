@@ -13,6 +13,7 @@ import AuthScreen from './components/AuthScreen'
 import LandingPage from './components/LandingPage'
 import LoadingScreen from './components/LoadingScreen'
 import WorkoutTab from './components/WorkoutTab'
+import ResumeWorkoutBanner from './components/ResumeWorkoutBanner'
 
 // react-markdown (AiCoachTab) and react-multi-date-picker (HistoryTab) are
 // both sizable and only needed once the user opens that specific tab, so
@@ -116,6 +117,12 @@ function Dashboard({
           onRestSoundChange={setRestSound}
           activeTab={activeTab}
           onTabChange={setActiveTab}
+        />
+      )}
+      {activeTab !== 'workout' && workout.activeSession && (
+        <ResumeWorkoutBanner
+          routineName={workout.activeSession.routineName}
+          onResume={() => setActiveTab('workout')}
         />
       )}
     </>
