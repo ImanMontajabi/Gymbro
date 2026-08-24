@@ -56,14 +56,13 @@ function logSupabaseError(error, message = 'خطایی رخ داد. دوباره
 // history, the in-progress session, and every CRUD action that mutates
 // them.
 //
-// `audioRef` is used only to fire the iOS-unlock tap when a set is logged.
 // `timer` (from useRestTimer) is started/cancelled alongside set/exercise
 // mutations. `onDataCleared` lets the caller also reset cross-cutting UI
 // (dark mode) when "Clear All Data" runs — everything else that action
 // resets lives in this hook. `writeMutation` (from useMutationQueue) is
 // used for every write below instead of calling `supabase` directly, so
 // each one is automatically queued and replayed later if offline.
-export function useWorkoutData({ user, audioRef, timer, onDataCleared, writeMutation }) {
+export function useWorkoutData({ user, timer, onDataCleared, writeMutation }) {
   const [routines, setRoutines] = useState([])
   const [history, setHistory] = useState([])
   const [activeSession, setActiveSession] = useState(null)
@@ -338,16 +337,13 @@ export function useWorkoutData({ user, audioRef, timer, onDataCleared, writeMuta
 
   async function handleAddSet(exerciseId, e) {
     e.preventDefault()
-    // Unlocks the <audio> element for iOS Safari — must run synchronously
-    // inside this real user-gesture handler, not inside a timer callback.
-    if (audioRef.current) {
-      audioRef.current
-        .play()
-        .then(() => audioRef.current.pause())
-        .catch((e) => console.log('Unlock failed:', e))
-    }
     const draft = getDraft(exerciseId)
     if (!(Number(draft.weight) > 0 && Number(draft.reps) > 0)) return
+
+    // handleEditSet marks the draft it populates as `isEditing` — submitting
+    // that draft is fixing up a set that already happened, not logging a
+    // new one, so the rest timer must be left exactly as it is.
+    const isEditResubmit = draft.isEditing === true
 
     const exercise = activeSession.exercises.find((ex) => ex.exerciseId === exerciseId)
 
@@ -366,7 +362,7 @@ export function useWorkoutData({ user, audioRef, timer, onDataCleared, writeMuta
     setDrafts((prev) => ({ ...prev, [exerciseId]: EMPTY_DRAFT }))
 
     const restTime = Number(exercise?.restTime) || 0
-    if (restTime > 0) {
+    if (restTime > 0 && !isEditResubmit) {
       timer.startTimer(exerciseId, restTime)
     }
 
@@ -404,6 +400,8 @@ export function useWorkoutData({ user, audioRef, timer, onDataCleared, writeMuta
   // user can correct it — it's removed from `sets` (not just displayed for
   // edit) so re-submitting doesn't create a duplicate; if they cancel by
   // navigating away, it stays gone rather than silently reappearing.
+  // `isEditing: true` marks the draft so handleAddSet knows this submission
+  // is correcting an existing set, not logging a new one — see its comment.
   function handleEditSet(exerciseId, setId) {
     const exercise = activeSession.exercises.find((ex) => ex.exerciseId === exerciseId)
     const set = exercise?.sets.find((s) => s.id === setId)
@@ -419,6 +417,7 @@ export function useWorkoutData({ user, audioRef, timer, onDataCleared, writeMuta
         weight: String(set.weight),
         reps: String(set.reps),
         note: set.note || '',
+        isEditing: true,
       },
     }))
 

@@ -53,7 +53,9 @@ function SortableSetRow({ set, index, onEdit, onDelete }) {
             ست {index + 1}: {set.weight} kg × {set.reps} تکرار
           </span>
           {set.note && (
-            <span className="truncate text-sm text-[rgb(var(--ctp-subtext0))]">{set.note}</span>
+            <span className="whitespace-pre-wrap break-words text-sm text-[rgb(var(--ctp-subtext0))]">
+              {set.note}
+            </span>
           )}
         </div>
       </div>
@@ -99,8 +101,6 @@ export default function WorkoutTab({
   user,
   onLogout,
   isOnline,
-  restSound,
-  onRestSoundChange,
   activeTab,
   onTabChange,
 }) {
@@ -195,8 +195,6 @@ export default function WorkoutTab({
         onLogout()
       }}
       userEmail={user?.email}
-      restSound={restSound}
-      onRestSoundChange={onRestSoundChange}
     />
   )
 
@@ -452,7 +450,10 @@ export default function WorkoutTab({
                         <li key={set.id} className="text-sm text-[rgb(var(--ctp-text))]">
                           ست {i + 1}: {set.weight} kg × {set.reps} تکرار
                           {set.note && (
-                            <span className="text-[rgb(var(--ctp-subtext0))]"> — {set.note}</span>
+                            <span className="whitespace-pre-wrap break-words text-[rgb(var(--ctp-subtext0))]">
+                              {' '}
+                              — {set.note}
+                            </span>
                           )}
                         </li>
                       ))}

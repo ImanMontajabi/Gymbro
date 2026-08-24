@@ -48,9 +48,7 @@ export default defineConfig({
         ],
       },
       workbox: {
-        // Cache the alarm mp3s too, so the rest-timer sound still fires
-        // when the installed app is offline or has a flaky gym wifi signal.
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,mp3,woff2}'],
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
       },
     }),
   ],

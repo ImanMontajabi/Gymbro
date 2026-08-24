@@ -1,18 +1,10 @@
 import Icon from './Icon'
 import SocialFooter from './SocialFooter'
-import { REST_SOUND_OPTIONS } from '../utils/audio'
 
 // Settings popup — centered modal with a dimmed, blurred backdrop. Houses
 // the destructive "Clear All Data" action and sign-out, kept out of the
 // main header so they can't be tapped by accident.
-export default function SettingsModal({
-  onClose,
-  onClearData,
-  onLogout,
-  userEmail,
-  restSound,
-  onRestSoundChange,
-}) {
+export default function SettingsModal({ onClose, onClearData, onLogout, userEmail }) {
   return (
     <div
       className="animate-fade-in fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
@@ -39,27 +31,6 @@ export default function SettingsModal({
             {userEmail}
           </p>
         )}
-
-        <div className="mb-5 flex flex-col gap-2">
-          <label
-            htmlFor="rest-sound"
-            className="text-sm font-medium text-[rgb(var(--ctp-subtext0))]"
-          >
-            صدای زنگ استراحت
-          </label>
-          <select
-            id="rest-sound"
-            value={restSound}
-            onChange={(e) => onRestSoundChange(e.target.value)}
-            className="rounded-xl border border-[rgb(var(--ctp-surface1)/0.6)] bg-[rgb(var(--ctp-mantle))] px-4 py-3.5 text-base text-[rgb(var(--ctp-text))] focus:border-[rgb(var(--ctp-mauve))] focus:outline-none focus:ring-2 focus:ring-[rgb(var(--ctp-mauve))]"
-          >
-            {REST_SOUND_OPTIONS.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-        </div>
 
         <div className="flex flex-col gap-3">
           <button

@@ -16,8 +16,6 @@ export default function AiCoachTab({
   user,
   onLogout,
   isOnline,
-  restSound,
-  onRestSoundChange,
   onClearData,
   activeTab,
   onTabChange,
@@ -37,8 +35,6 @@ export default function AiCoachTab({
         onLogout()
       }}
       userEmail={user?.email}
-      restSound={restSound}
-      onRestSoundChange={onRestSoundChange}
     />
   )
 

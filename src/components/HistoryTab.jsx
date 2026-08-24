@@ -35,8 +35,6 @@ export default function HistoryTab({
   user,
   onLogout,
   isOnline,
-  restSound,
-  onRestSoundChange,
   onClearData,
   activeTab,
   onTabChange,
@@ -85,8 +83,6 @@ export default function HistoryTab({
         onLogout()
       }}
       userEmail={user?.email}
-      restSound={restSound}
-      onRestSoundChange={onRestSoundChange}
     />
   )
 

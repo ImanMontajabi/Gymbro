@@ -1,14 +1,14 @@
-import { lazy, Suspense, useRef, useState } from 'react'
+import { lazy, Suspense, useState } from 'react'
 import { BrowserRouter, Navigate, Route, Routes, useNavigate } from 'react-router-dom'
 import { Toaster } from 'react-hot-toast'
 import { useAuth } from './hooks/useAuth'
 import { useNetworkStatus } from './hooks/useNetworkStatus'
 import { useMutationQueue } from './hooks/useMutationQueue'
 import { useRestTimer } from './hooks/useRestTimer'
-import { useRestSound } from './hooks/useRestSound'
 import { useWorkoutData } from './hooks/useWorkoutData'
 import { useProgressChart } from './hooks/useProgressChart'
 import { useAiCoach } from './hooks/useAiCoach'
+import { useWakeLock } from './hooks/useWakeLock'
 import AuthScreen from './components/AuthScreen'
 import LandingPage from './components/LandingPage'
 import LoadingScreen from './components/LoadingScreen'
@@ -50,17 +50,7 @@ const toastOptions = {
 // post-logout redirect, and that hook only works on a descendant of
 // <BrowserRouter> — App itself is the one that renders the router, so it
 // can't call the hook directly.
-function Dashboard({
-  user,
-  logout,
-  workout,
-  timer,
-  audioRef,
-  isOnline,
-  restSound,
-  setRestSound,
-  aiCoach,
-}) {
+function Dashboard({ user, logout, workout, timer, isOnline, aiCoach }) {
   const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState('workout') // 'workout' | 'history' | 'coach'
   const progressChart = useProgressChart(workout.history)
@@ -74,7 +64,6 @@ function Dashboard({
 
   return (
     <>
-      <audio ref={audioRef} src={`/sounds/${restSound}`} preload="auto" />
       {activeTab === 'history' ? (
         <Suspense fallback={<LoadingScreen />}>
           <HistoryTab
@@ -83,8 +72,6 @@ function Dashboard({
             user={user}
             onLogout={handleLogout}
             isOnline={isOnline}
-            restSound={restSound}
-            onRestSoundChange={setRestSound}
             onClearData={workout.handleClearAllData}
             activeTab={activeTab}
             onTabChange={setActiveTab}
@@ -99,8 +86,6 @@ function Dashboard({
             user={user}
             onLogout={handleLogout}
             isOnline={isOnline}
-            restSound={restSound}
-            onRestSoundChange={setRestSound}
             onClearData={workout.handleClearAllData}
             activeTab={activeTab}
             onTabChange={setActiveTab}
@@ -113,8 +98,6 @@ function Dashboard({
           user={user}
           onLogout={handleLogout}
           isOnline={isOnline}
-          restSound={restSound}
-          onRestSoundChange={setRestSound}
           activeTab={activeTab}
           onTabChange={setActiveTab}
         />
@@ -129,26 +112,27 @@ function Dashboard({
   )
 }
 
-// App shell: owns the single shared <audio> element used for the rest-timer
-// alarm (and its iOS unlock tap), the toast host, and top-level routing.
-// Everything else — data fetching, CRUD, timers, screens — is composed from
-// hooks/components and handed down as props.
+// App shell: owns the toast host and top-level routing. Everything else —
+// data fetching, CRUD, timers, screens — is composed from hooks/components
+// and handed down as props.
 function App() {
   const { authSession, user, logout } = useAuth()
 
   const isOnline = useNetworkStatus()
   const { writeMutation } = useMutationQueue()
 
-  const audioRef = useRef(null)
-  const timer = useRestTimer(audioRef)
-  const { restSound, setRestSound } = useRestSound(audioRef)
+  const timer = useRestTimer()
   const workout = useWorkoutData({
     user,
-    audioRef,
     timer,
     writeMutation,
   })
   const aiCoach = useAiCoach()
+
+  // Keyed on activeSession rather than the workout tab being open — the
+  // screen should stay awake for the whole workout, including while the
+  // user is briefly checking history or the coach mid-session.
+  useWakeLock(!!workout.activeSession)
 
   const toaster = (
     <Toaster
@@ -183,10 +167,7 @@ function App() {
                 logout={logout}
                 workout={workout}
                 timer={timer}
-                audioRef={audioRef}
                 isOnline={isOnline}
-                restSound={restSound}
-                setRestSound={setRestSound}
                 aiCoach={aiCoach}
               />
             ) : (

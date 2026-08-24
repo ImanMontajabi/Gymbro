@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react'
+import toast from 'react-hot-toast'
 
 // Rest timer — a single active timer at a time, tied to whichever exercise
 // it belongs to. Logging any set overwrites it (per spec: "restarting a
-// new set should reset and overwrite the timer"). `audioRef` is the shared
-// <audio> element rendered in App.jsx; playback fires here once, when the
-// countdown reaches zero.
-export function useRestTimer(audioRef) {
+// new set should reset and overwrite the timer"). Deliberately silent — no
+// audio alarm — since a beep is distracting in a gym; a toast is the only
+// cue when the countdown reaches zero.
+export function useRestTimer() {
   const [activeTimer, setActiveTimer] = useState(null) // { exerciseId, duration, endTime }
   const [remaining, setRemaining] = useState(0)
 
@@ -18,10 +19,7 @@ export function useRestTimer(audioRef) {
       setRemaining(secondsLeft)
       if (secondsLeft <= 0) {
         clearInterval(intervalId)
-        if (audioRef.current) {
-          audioRef.current.currentTime = 0
-          audioRef.current.play().catch((e) => console.log('Playback failed:', e))
-        }
+        toast('زمان استراحت تمام شد', { icon: '⏱️' })
         setActiveTimer(null)
       }
     }
