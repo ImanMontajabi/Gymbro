@@ -62,7 +62,7 @@ function logSupabaseError(error, message = 'خطایی رخ داد. دوباره
 // resets lives in this hook. `writeMutation` (from useMutationQueue) is
 // used for every write below instead of calling `supabase` directly, so
 // each one is automatically queued and replayed later if offline.
-export function useWorkoutData({ user, timer, onDataCleared, writeMutation, requestWakeLock }) {
+export function useWorkoutData({ user, timer, onDataCleared, writeMutation }) {
   const [routines, setRoutines] = useState([])
   const [history, setHistory] = useState([])
   const [activeSession, setActiveSession] = useState(null)
@@ -197,11 +197,6 @@ export function useWorkoutData({ user, timer, onDataCleared, writeMutation, requ
   }
 
   function handleStartRoutine(routine) {
-    // Called synchronously from the "شروع تمرین" click handler — the
-    // request must fire inside this gesture, not after an await, or
-    // mobile Safari/Chrome will refuse it.
-    requestWakeLock?.()
-
     const id = crypto.randomUUID()
     const date = new Date().toISOString()
     const exercises = routine.exercises.map((ex) => ({
@@ -342,11 +337,6 @@ export function useWorkoutData({ user, timer, onDataCleared, writeMutation, requ
 
   async function handleAddSet(exerciseId, e) {
     e.preventDefault()
-    // Fired synchronously from the submit gesture, before any await below —
-    // completing a set is the other reliable moment (besides starting the
-    // workout) to (re-)acquire the lock if iOS dropped it in the background.
-    requestWakeLock?.()
-
     const draft = getDraft(exerciseId)
     if (!(Number(draft.weight) > 0 && Number(draft.reps) > 0)) return
 

@@ -1,4 +1,4 @@
-import { lazy, Suspense, useCallback, useRef, useState } from 'react'
+import { lazy, Suspense, useState } from 'react'
 import { BrowserRouter, Navigate, Route, Routes, useNavigate } from 'react-router-dom'
 import { Toaster } from 'react-hot-toast'
 import { useAuth } from './hooks/useAuth'
@@ -8,7 +8,6 @@ import { useRestTimer } from './hooks/useRestTimer'
 import { useWorkoutData } from './hooks/useWorkoutData'
 import { useProgressChart } from './hooks/useProgressChart'
 import { useAiCoach } from './hooks/useAiCoach'
-import { useWakeLock } from './hooks/useWakeLock'
 import AuthScreen from './components/AuthScreen'
 import LandingPage from './components/LandingPage'
 import LoadingScreen from './components/LoadingScreen'
@@ -121,29 +120,13 @@ function App() {
   const isOnline = useNetworkStatus()
   const { writeMutation } = useMutationQueue()
 
-  // useWorkoutData needs a stable requestWakeLock to call directly from its
-  // own user-gesture handlers (starting a routine, logging a set) — mobile
-  // browsers require the wake lock request to happen inside the gesture
-  // itself, not in an effect a render later. useWakeLock in turn needs
-  // workout.activeSession to know whether a workout is active. A ref breaks
-  // the circular dependency: the wrapper below is stable across renders and
-  // just forwards to whatever useWakeLock most recently returned.
-  const wakeLockRequesterRef = useRef(null)
-  const requestWakeLock = useCallback(() => wakeLockRequesterRef.current?.(), [])
-
   const timer = useRestTimer()
   const workout = useWorkoutData({
     user,
     timer,
     writeMutation,
-    requestWakeLock,
   })
   const aiCoach = useAiCoach()
-
-  // Keyed on activeSession rather than the workout tab being open — the
-  // screen should stay awake for the whole workout, including while the
-  // user is briefly checking history or the coach mid-session.
-  wakeLockRequesterRef.current = useWakeLock(!!workout.activeSession)
 
   const toaster = (
     <Toaster
