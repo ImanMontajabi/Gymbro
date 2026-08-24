@@ -96,6 +96,9 @@ export default function WorkoutTab({
 }) {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const [expandedCharts, setExpandedCharts] = useState(() => new Set())
+  // Focus Mode: only one exercise is ever expanded for data entry at a time,
+  // so a stray tap mid-set can't land on the wrong exercise's inputs.
+  const [activeExerciseId, setActiveExerciseId] = useState(null)
 
   function toggleChart(exerciseId) {
     setExpandedCharts((prev) => {
@@ -266,6 +269,16 @@ export default function WorkoutTab({
 
   // --- Active workout view -------------------------------------------------
 
+  // The active exercise is always pinned to index 0; the rest keep their
+  // original routine order. The comparator only ever returns -1/0/1 for
+  // pairs touching the active exercise, so it leaves everyone else's
+  // relative order untouched (sort is stable per spec).
+  const sortedExercises = [...activeSession.exercises].sort((a, b) => {
+    if (a.exerciseId === activeExerciseId) return -1
+    if (b.exerciseId === activeExerciseId) return 1
+    return 0
+  })
+
   return (
     <div className="min-h-screen bg-[rgb(var(--ctp-base))] text-[rgb(var(--ctp-text))]">
       {settingsModal}
@@ -279,7 +292,33 @@ export default function WorkoutTab({
         </header>
 
         <div className="flex flex-col gap-4">
-          {activeSession.exercises.map((ex, index) => {
+          {sortedExercises.map((ex) => {
+            const isActive = ex.exerciseId === activeExerciseId
+
+            if (!isActive) {
+              const setsSummary =
+                ex.sets.length > 0 ? `${ex.sets.length} ست ثبت شده` : 'هنوز ستی ثبت نشده'
+
+              return (
+                <div
+                  key={ex.exerciseId}
+                  className="animate-fade-slide-in flex items-center gap-3 rounded-2xl border border-[rgb(var(--ctp-surface1)/0.4)] bg-[rgb(var(--ctp-surface0))] p-4 shadow-md shadow-black/10 transition-all duration-300"
+                >
+                  <div className="min-w-0 flex-1">
+                    <h3 className="truncate text-lg font-bold">{ex.exerciseName}</h3>
+                    <p className="text-sm text-[rgb(var(--ctp-subtext0))]">{setsSummary}</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setActiveExerciseId(ex.exerciseId)}
+                    className="shrink-0 rounded-xl bg-[rgb(var(--ctp-mauve))] px-4 py-3 text-sm font-bold text-[rgb(var(--ctp-base))] transition-all duration-150 ease-out active:scale-[0.97] active:opacity-80"
+                  >
+                    انجام حرکت
+                  </button>
+                </div>
+              )
+            }
+
             const draft = getDraft(ex.exerciseId)
             const previous = previousRecords[ex.exerciseName]
             const canSubmit = Number(draft.weight) > 0 && Number(draft.reps) > 0
@@ -288,7 +327,7 @@ export default function WorkoutTab({
             return (
               <div
                 key={ex.exerciseId}
-                className="animate-fade-slide-in rounded-2xl border border-[rgb(var(--ctp-surface1)/0.4)] bg-[rgb(var(--ctp-surface0))] p-4 shadow-md shadow-black/10 transition-all duration-200"
+                className="animate-fade-slide-in rounded-2xl border border-[rgb(var(--ctp-mauve)/0.5)] bg-[rgb(var(--ctp-surface0))] p-4 shadow-md shadow-black/10 transition-all duration-300"
               >
                 {editingExerciseId === ex.exerciseId ? (
                   <div className="mb-3">
@@ -331,6 +370,14 @@ export default function WorkoutTab({
                         className="inline-flex shrink-0 items-center justify-center rounded-full p-2.5 text-[rgb(var(--ctp-subtext0))] transition-all duration-150 ease-out hover:bg-[rgb(var(--ctp-surface1)/0.5)] hover:text-[rgb(var(--ctp-red))] active:scale-90 active:opacity-70"
                       >
                         <Icon name="delete" className="text-[18px]" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setActiveExerciseId(null)}
+                        aria-label="بستن حرکت"
+                        className="inline-flex shrink-0 items-center justify-center rounded-full p-2.5 text-[rgb(var(--ctp-subtext0))] transition-all duration-150 ease-out hover:bg-[rgb(var(--ctp-surface1)/0.5)] hover:text-[rgb(var(--ctp-mauve))] active:scale-90 active:opacity-70"
+                      >
+                        <Icon name="expand_less" className="text-[18px]" />
                       </button>
                     </div>
                     {ex.restTime > 0 && (
@@ -380,13 +427,13 @@ export default function WorkoutTab({
                   <div className="flex gap-3">
                     <div className="flex min-w-0 flex-1 flex-col gap-2">
                       <label
-                        htmlFor={`weight-${index}`}
+                        htmlFor={`weight-${ex.exerciseId}`}
                         className="text-sm font-medium text-[rgb(var(--ctp-subtext0))]"
                       >
                         وزنه (kg)
                       </label>
                       <input
-                        id={`weight-${index}`}
+                        id={`weight-${ex.exerciseId}`}
                         type="text"
                         inputMode="decimal"
                         placeholder="۰"
@@ -404,13 +451,13 @@ export default function WorkoutTab({
 
                     <div className="flex min-w-0 flex-1 flex-col gap-2">
                       <label
-                        htmlFor={`reps-${index}`}
+                        htmlFor={`reps-${ex.exerciseId}`}
                         className="text-sm font-medium text-[rgb(var(--ctp-subtext0))]"
                       >
                         تکرار
                       </label>
                       <input
-                        id={`reps-${index}`}
+                        id={`reps-${ex.exerciseId}`}
                         type="text"
                         inputMode="numeric"
                         placeholder="۰"
@@ -425,14 +472,14 @@ export default function WorkoutTab({
 
                   <div className="flex flex-col gap-2">
                     <label
-                      htmlFor={`note-${index}`}
+                      htmlFor={`note-${ex.exerciseId}`}
                       className="text-sm font-medium text-[rgb(var(--ctp-subtext0))]"
                     >
                       یادداشت{' '}
                       <span className="text-[rgb(var(--ctp-subtext0))]">(اختیاری)</span>
                     </label>
                     <input
-                      id={`note-${index}`}
+                      id={`note-${ex.exerciseId}`}
                       type="text"
                       inputMode="text"
                       placeholder="مثلاً ست اضافی یا مکث دو ثانیه"
