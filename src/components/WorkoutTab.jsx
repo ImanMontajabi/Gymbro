@@ -112,9 +112,6 @@ export default function WorkoutTab({
   const { t, dir, language } = useLanguage()
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const [expandedCharts, setExpandedCharts] = useState(() => new Set())
-  // Focus Mode: only one exercise is ever expanded for data entry at a time,
-  // so a stray tap mid-set can't land on the wrong exercise's inputs.
-  const [activeExerciseId, setActiveExerciseId] = useState(null)
 
   // "پایان تمرین" only fires after being held for END_WORKOUT_HOLD_MS — the
   // timeout below does the actual firing, isHoldingEnd just drives the fill
@@ -164,6 +161,13 @@ export default function WorkoutTab({
     setEditingExerciseId,
     isAddingExercise,
     setIsAddingExercise,
+    // Focus Mode: only one exercise is ever expanded for data entry at a
+    // time, so a stray tap mid-set can't land on the wrong exercise's
+    // inputs. Lives in useWorkoutData (not local state) so it survives
+    // WorkoutTab unmounting when the user switches to another tab — see
+    // the comment on activeExerciseId there.
+    activeExerciseId,
+    setActiveExerciseId,
     addingSetExerciseId,
     handleCreateRoutine,
     handleRenameRoutine,

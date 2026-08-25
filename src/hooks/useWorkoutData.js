@@ -79,6 +79,14 @@ export function useWorkoutData({ user, timer, onDataCleared, writeMutation }) {
   const [editingExerciseId, setEditingExerciseId] = useState(null)
   const [isAddingExercise, setIsAddingExercise] = useState(false)
 
+  // Focus Mode: which exercise is expanded for data entry in WorkoutTab.
+  // Lives here (not as local state in WorkoutTab) because Dashboard in
+  // App.jsx unmounts WorkoutTab whenever the user switches to the
+  // History/Coach tab — a local useState would reset to null on that
+  // unmount, collapsing the expanded card every time the user navigated
+  // away and back.
+  const [activeExerciseId, setActiveExerciseId] = useState(null)
+
   const [isCreatingRoutine, setIsCreatingRoutine] = useState(false)
   const [addingSetExerciseId, setAddingSetExerciseId] = useState(null)
 
@@ -207,6 +215,7 @@ export function useWorkoutData({ user, timer, onDataCleared, writeMutation }) {
     }))
 
     setDrafts({})
+    setActiveExerciseId(null)
     timer.cancelTimer()
     setActiveSession({ id, routineId: routine.id, routineName: routine.name, date, exercises })
 
@@ -314,6 +323,7 @@ export function useWorkoutData({ user, timer, onDataCleared, writeMutation }) {
 
     const updatedExercises = activeSession.exercises.filter((ex) => ex.exerciseId !== exerciseId)
     setActiveSession({ ...activeSession, exercises: updatedExercises })
+    setActiveExerciseId((prev) => (prev === exerciseId ? null : prev))
     timer.cancelIfMatches(exerciseId)
 
     writeMutation({
@@ -481,6 +491,7 @@ export function useWorkoutData({ user, timer, onDataCleared, writeMutation }) {
 
     setActiveSession(null)
     setDrafts({})
+    setActiveExerciseId(null)
     setIsAddingExercise(false)
     setEditingExerciseId(null)
     timer.cancelTimer()
@@ -537,6 +548,7 @@ export function useWorkoutData({ user, timer, onDataCleared, writeMutation }) {
     setHistory([])
     setActiveSession(null)
     setDrafts({})
+    setActiveExerciseId(null)
     timer.cancelTimer()
     setEditingRoutineId(null)
     setIsAddingRoutine(false)
@@ -570,6 +582,8 @@ export function useWorkoutData({ user, timer, onDataCleared, writeMutation }) {
     setEditingExerciseId,
     isAddingExercise,
     setIsAddingExercise,
+    activeExerciseId,
+    setActiveExerciseId,
     isCreatingRoutine,
     addingSetExerciseId,
     handleCreateRoutine,
