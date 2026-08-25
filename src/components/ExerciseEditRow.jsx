@@ -1,9 +1,11 @@
 import { useState } from 'react'
 import { sanitizeNumericInput } from '../utils/numbers'
+import { useLanguage } from '../context/LanguageContext'
 
 // Add/rename form for an exercise: name + rest time (seconds). Used both for
 // "افزودن حرکت" and for the edit action on an existing exercise card.
 export default function ExerciseEditRow({ initialName, initialRestTime, onSave, onCancel }) {
+  const { t } = useLanguage()
   const [name, setName] = useState(initialName)
   const [restTime, setRestTime] = useState(initialRestTime > 0 ? String(initialRestTime) : '')
 
@@ -19,18 +21,18 @@ export default function ExerciseEditRow({ initialName, initialRestTime, onSave, 
         autoFocus
         type="text"
         value={name}
-        placeholder="نام حرکت"
+        placeholder={t('wtExerciseNamePlaceholder')}
         onChange={(e) => setName(e.target.value)}
         className="rounded-lg border border-[rgb(var(--ctp-mauve))] bg-[rgb(var(--ctp-mantle))] px-3 py-3.5 text-base text-[rgb(var(--ctp-text))] focus:outline-none focus:ring-2 focus:ring-[rgb(var(--ctp-mauve))]"
       />
       <div className="flex flex-col gap-1">
         <label className="text-xs font-medium text-[rgb(var(--ctp-subtext0))]">
-          زمان استراحت (ثانیه)
+          {t('wtRestTimeLabel')}
         </label>
         <input
           type="text"
           inputMode="numeric"
-          placeholder="۹۰"
+          placeholder={t('wtRestTimePlaceholder')}
           value={restTime}
           onChange={(e) => setRestTime(sanitizeNumericInput(e.target.value))}
           className="rounded-lg border border-[rgb(var(--ctp-surface1)/0.6)] bg-[rgb(var(--ctp-mantle))] px-3 py-3.5 text-base text-[rgb(var(--ctp-text))] focus:outline-none focus:ring-2 focus:ring-[rgb(var(--ctp-mauve))]"
@@ -42,14 +44,14 @@ export default function ExerciseEditRow({ initialName, initialRestTime, onSave, 
           onClick={save}
           className="flex-1 rounded-lg bg-[rgb(var(--ctp-mauve))] py-3 text-sm font-bold text-[rgb(var(--ctp-base))] transition-all duration-150 ease-out active:scale-[0.97] active:opacity-80"
         >
-          ذخیره
+          {t('save')}
         </button>
         <button
           type="button"
           onClick={onCancel}
           className="flex-1 rounded-lg border border-[rgb(var(--ctp-surface1))] py-3 text-sm font-bold text-[rgb(var(--ctp-subtext0))] transition-all duration-150 ease-out active:scale-[0.97] active:opacity-80"
         >
-          لغو
+          {t('wtCancel')}
         </button>
       </div>
     </div>

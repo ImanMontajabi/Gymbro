@@ -11,9 +11,7 @@ export const LANGUAGE_DIR = { fa: 'rtl', en: 'ltr', ar: 'rtl' }
 // correctly no matter which one is active.
 export const LANGUAGE_LABEL = { fa: 'فا', en: 'EN', ar: 'AR' }
 
-// Flat key → per-language string dictionary. Deliberately not translating
-// WorkoutTab.jsx (see the PR description) — its strings simply aren't keys
-// here, so it stays Persian-only regardless of the active language.
+// Flat key → per-language string dictionary.
 export const translations = {
   common: {
     fa: 'جیم برو',
@@ -65,7 +63,7 @@ export const translations = {
   headerSettings: { fa: 'تنظیمات', en: 'Settings', ar: 'الإعدادات' },
   navWorkout: { fa: 'تمرین امروز', en: "Today's Workout", ar: 'تمرين اليوم' },
   navHistory: { fa: 'تاریخچه و پیشرفت', en: 'History & Progress', ar: 'السجل والتقدم' },
-  navCoach: { fa: 'مربی من', en: 'My Coach', ar: 'مدربي' },
+  navCoach: { fa: 'مربی من', en: 'My Coach', ar: 'المدرب الذكي' },
 
   // --- Resume workout banner ---------------------------------------------------
   resumeInProgress: { fa: 'تمرین در جریان', en: 'Workout in progress', ar: 'التمرين جارٍ' },
@@ -106,7 +104,7 @@ export const translations = {
   historyNoSets: { fa: 'ستی برای این حرکت باقی نمانده', en: 'No sets left for this exercise', ar: 'لا توجد مجموعات متبقية لهذا التمرين' },
 
   // --- AI coach tab ------------------------------------------------------------
-  coachTitle: { fa: 'مربی من', en: 'My Coach', ar: 'مدربي' },
+  coachTitle: { fa: 'مربی من', en: 'My Coach', ar: 'المدرب الذكي' },
   coachGetAnalysis: { fa: 'دریافت تحلیل عملکرد', en: 'Get Performance Analysis', ar: 'الحصول على تحليل الأداء' },
   coachAnalyzing: { fa: 'در حال تحلیل...', en: 'Analyzing...', ar: 'جارٍ التحليل...' },
   coachResultTitle: { fa: 'تحلیل مربی هوشمند', en: 'AI Coach Analysis', ar: 'تحليل المدرب الذكي' },
@@ -119,6 +117,61 @@ export const translations = {
   coachGoalMuscle: { fa: 'عضله‌سازی', en: 'Muscle Building', ar: 'بناء العضلات' },
   coachGoalFatLoss: { fa: 'چربی‌سوزی', en: 'Fat Loss', ar: 'حرق الدهون' },
   coachGoalRecovery: { fa: 'ریکاوری', en: 'Recovery', ar: 'التعافي' },
+
+  // --- Workout tab (active workout view + its NameEditRow/ExerciseEditRow
+  // subcomponents) -------------------------------------------------------------
+  wtDragSet: { fa: 'جابجایی ست', en: 'Move set', ar: 'نقل المجموعة' },
+  // {n}/{weight}/{reps} are replaced by the caller. "kg" is left as a literal
+  // unit abbreviation in every language, matching HistorySessionEditModal.
+  wtSetLineTemplate: {
+    fa: 'ست {n}: {weight} kg × {reps} تکرار',
+    en: 'Set {n}: {weight} kg × {reps} reps',
+    ar: 'المجموعة {n}: {weight} كجم × {reps} تكرار',
+  },
+  wtEditSet: { fa: 'ویرایش ست', en: 'Edit set', ar: 'تعديل المجموعة' },
+  wtDeleteSet: { fa: 'حذف ست', en: 'Delete set', ar: 'حذف المجموعة' },
+  wtChooseRoutine: { fa: 'برنامه امروز رو انتخاب کن', en: "Choose today's routine", ar: 'اختر برنامج اليوم' },
+  wtEditRoutineName: { fa: 'ویرایش نام برنامه', en: 'Edit routine name', ar: 'تعديل اسم البرنامج' },
+  wtDeleteRoutine: { fa: 'حذف برنامه', en: 'Delete routine', ar: 'حذف البرنامج' },
+  wtRoutineNamePlaceholder: { fa: 'مثلاً Push Day', en: 'e.g. Push Day', ar: 'مثال: Push Day' },
+  wtCreateRoutine: { fa: 'ایجاد برنامه جدید', en: 'Create New Routine', ar: 'إنشاء برنامج جديد' },
+  wtBackAriaLabel: { fa: 'خروج موقت از تمرین', en: 'Temporarily exit workout', ar: 'الخروج المؤقت من التمرين' },
+  wtRoutineLabel: { fa: 'برنامه', en: 'Routine', ar: 'البرنامج' },
+  wtSetsLoggedTemplate: { fa: '{n} ست ثبت شده', en: '{n} sets logged', ar: 'تم تسجيل {n} مجموعة' },
+  wtNoSetsLogged: { fa: 'هنوز ستی ثبت نشده', en: 'No sets logged yet', ar: 'لم يتم تسجيل أي مجموعة بعد' },
+  wtDoExercise: { fa: 'انجام حرکت', en: 'Start Exercise', ar: 'بدء التمرين' },
+  wtProgressChartAria: { fa: 'نمودار پیشرفت', en: 'Progress chart', ar: 'مخطط التقدم' },
+  wtEditExerciseName: { fa: 'ویرایش نام حرکت', en: 'Edit exercise name', ar: 'تعديل اسم التمرين' },
+  wtDeleteExercise: { fa: 'حذف حرکت', en: 'Delete exercise', ar: 'حذف التمرين' },
+  wtCloseExercise: { fa: 'بستن حرکت', en: 'Collapse exercise', ar: 'طي التمرين' },
+  wtDefaultRestTemplate: { fa: 'استراحت پیش‌فرض: {n} ثانیه', en: 'Default rest: {n}s', ar: 'الراحة الافتراضية: {n} ثانية' },
+  wtPreviousRecord: { fa: 'رکورد جلسه قبل', en: 'Previous session record', ar: 'رقم الجلسة السابقة' },
+  wtOptional: { fa: '(اختیاری)', en: '(optional)', ar: '(اختياري)' },
+  wtNotePlaceholder: {
+    fa: 'مثلاً ست اضافی یا مکث دو ثانیه',
+    en: 'e.g. extra set or 2s pause',
+    ar: 'مثلاً مجموعة إضافية أو توقف ثانيتين',
+  },
+  wtSubmittingSet: { fa: 'در حال ثبت...', en: 'Logging...', ar: 'جارٍ التسجيل...' },
+  wtSubmitSet: { fa: 'ثبت ست', en: 'Log Set', ar: 'تسجيل المجموعة' },
+  wtTimeUp: { fa: 'زمان تمام شد', en: 'Time Exceeded', ar: 'انتهى الوقت' },
+  wtResting: { fa: 'استراحت', en: 'Resting', ar: 'استراحة' },
+  // Distinct from the generic `cancel` key ("انصراف") — kept as its own key
+  // so extracting these strings doesn't silently change the exact Persian
+  // wording ("لغو") already shown in NameEditRow, ExerciseEditRow, and the
+  // active rest timer's cancel button.
+  wtCancel: { fa: 'لغو', en: 'Cancel', ar: 'إلغاء' },
+  wtAddExercise: { fa: 'افزودن حرکت', en: 'Add Exercise', ar: 'إضافة تمرين' },
+  wtHoldToEnd: {
+    fa: 'برای پایان، لمس کرده و نگه دارید',
+    en: 'Touch and hold to end',
+    ar: 'المس واستمر لإنهاء التمرين',
+  },
+  wtHolding: { fa: 'نگه دارید...', en: 'Keep holding...', ar: 'استمر بالضغط...' },
+  wtExerciseNamePlaceholder: { fa: 'نام حرکت', en: 'Exercise name', ar: 'اسم التمرين' },
+  wtRestTimeLabel: { fa: 'زمان استراحت (ثانیه)', en: 'Rest time (seconds)', ar: 'وقت الراحة (ثانية)' },
+  wtRestTimePlaceholder: { fa: '۹۰', en: '90', ar: '٩٠' },
+  wtZeroPlaceholder: { fa: '۰', en: '0', ar: '٠' },
 }
 
 // Looks up `key` in the current `language`, falling back to Persian (the
@@ -131,10 +184,11 @@ export function translate(key, language) {
 }
 
 // Goal → instruction text spliced into the AI coach report (see
-// AiCoachTab.jsx / useAiCoach.js). Kept in Persian regardless of UI
-// language since the whole ai-coach prompt/response pipeline is Persian
-// (see supabase/functions/ai-coach/index.ts) — mixing in an English
-// instruction block would be inconsistent with the rest of the payload.
+// AiCoachTab.jsx / useAiCoach.js). Kept in Persian — an LLM instruction
+// is understood regardless of what language it's written in, and the
+// response language is controlled independently — see the language
+// directives sandwiching the report in useAiCoach.js — so this doesn't
+// need to track the UI language.
 export const AI_GOAL_INSTRUCTIONS = {
   muscle:
     '[هدف انتخابی کاربر: عضله‌سازی] لطفاً پیشنهادهایت را با تمرکز بر افزایش تدریجی وزنه (اورلود پیش‌رونده)، حجم کافی تمرین و تناوب مناسب هر گروه عضلانی ارائه بده.',

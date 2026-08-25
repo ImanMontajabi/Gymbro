@@ -8,6 +8,7 @@ import ExerciseEditRow from './ExerciseEditRow'
 import HeaderActions from './HeaderActions'
 import SettingsModal from './SettingsModal'
 import BottomTabBar from './BottomTabBar'
+import { useLanguage } from '../context/LanguageContext'
 import { formatSessionDate } from '../utils/history'
 import { formatTime } from '../utils/time'
 import { sanitizeNumericInput } from '../utils/numbers'
@@ -21,6 +22,7 @@ const ExerciseChart = lazy(() => import('./ExerciseChart'))
 // `useSortable` to run inside the item component itself (it can't be called
 // from a loop in the parent), so this is split out rather than inlined.
 function SortableSetRow({ set, index, onEdit, onDelete }) {
+  const { t } = useLanguage()
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: set.id,
   })
@@ -43,14 +45,17 @@ function SortableSetRow({ set, index, onEdit, onDelete }) {
           type="button"
           {...attributes}
           {...listeners}
-          aria-label="جابجایی ست"
+          aria-label={t('wtDragSet')}
           className="inline-flex shrink-0 touch-none items-center justify-center rounded-full p-2.5 text-[rgb(var(--ctp-subtext0))] transition-all duration-150 ease-out active:scale-90 active:cursor-grabbing active:opacity-70"
         >
           <Icon name="drag_indicator" className="text-[20px]" />
         </button>
         <div className="flex min-w-0 flex-col gap-0.5">
           <span className="truncate text-[rgb(var(--ctp-text))]">
-            ست {index + 1}: {set.weight} kg × {set.reps} تکرار
+            {t('wtSetLineTemplate')
+              .replace('{n}', index + 1)
+              .replace('{weight}', set.weight)
+              .replace('{reps}', set.reps)}
           </span>
           {set.note && (
             <span className="whitespace-pre-wrap break-words text-sm text-[rgb(var(--ctp-subtext0))]">
@@ -63,7 +68,7 @@ function SortableSetRow({ set, index, onEdit, onDelete }) {
         <button
           type="button"
           onClick={onEdit}
-          aria-label="ویرایش ست"
+          aria-label={t('wtEditSet')}
           className="inline-flex items-center justify-center rounded-full p-2.5 text-[rgb(var(--ctp-subtext0))] transition-all duration-150 ease-out hover:bg-[rgb(var(--ctp-surface1)/0.5)] hover:text-[rgb(var(--ctp-mauve))] active:scale-90 active:opacity-70"
         >
           <Icon name="edit" className="text-[18px]" />
@@ -71,7 +76,7 @@ function SortableSetRow({ set, index, onEdit, onDelete }) {
         <button
           type="button"
           onClick={onDelete}
-          aria-label="حذف ست"
+          aria-label={t('wtDeleteSet')}
           className="inline-flex items-center justify-center rounded-full p-2.5 text-[rgb(var(--ctp-subtext0))] transition-all duration-150 ease-out hover:bg-[rgb(var(--ctp-surface1)/0.5)] hover:text-[rgb(var(--ctp-red))] active:scale-90 active:opacity-70"
         >
           <Icon name="close" className="text-[18px]" />
@@ -104,6 +109,7 @@ export default function WorkoutTab({
   activeTab,
   onTabChange,
 }) {
+  const { t, dir, language } = useLanguage()
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const [expandedCharts, setExpandedCharts] = useState(() => new Set())
   // Focus Mode: only one exercise is ever expanded for data entry at a time,
@@ -218,13 +224,13 @@ export default function WorkoutTab({
                 alt="Gymbro Logo"
                 className="h-8 w-8 rounded-xl object-contain shadow-sm"
               />
-              <h1 className="text-2xl font-bold">جیم برو</h1>
+              <h1 className="text-2xl font-bold">{t('common')}</h1>
             </div>
             {headerActions}
           </header>
 
           <section>
-            <h2 className="mb-4 text-lg font-bold">برنامه امروز رو انتخاب کن</h2>
+            <h2 className="mb-4 text-lg font-bold">{t('wtChooseRoutine')}</h2>
             <div className="flex flex-col gap-3">
               {routines.map((routine) => (
                 <div
@@ -242,14 +248,14 @@ export default function WorkoutTab({
                       <button
                         type="button"
                         onClick={() => handleStartRoutine(routine)}
-                        className="flex-1 truncate rounded-xl py-2 text-right text-lg font-bold text-[rgb(var(--ctp-text))] transition-all duration-150 ease-out active:scale-[0.98] active:opacity-70"
+                        className="flex-1 truncate rounded-xl py-2 text-start text-lg font-bold text-[rgb(var(--ctp-text))] transition-all duration-150 ease-out active:scale-[0.98] active:opacity-70"
                       >
                         {routine.name}
                       </button>
                       <button
                         type="button"
                         onClick={() => setEditingRoutineId(routine.id)}
-                        aria-label="ویرایش نام برنامه"
+                        aria-label={t('wtEditRoutineName')}
                         className="inline-flex shrink-0 items-center justify-center rounded-full p-3 text-[rgb(var(--ctp-subtext0))] transition-all duration-150 ease-out hover:bg-[rgb(var(--ctp-surface1)/0.5)] hover:text-[rgb(var(--ctp-mauve))] active:scale-90 active:opacity-70"
                       >
                         <Icon name="edit" className="text-[20px]" />
@@ -257,7 +263,7 @@ export default function WorkoutTab({
                       <button
                         type="button"
                         onClick={() => handleDeleteRoutine(routine.id, routine.name)}
-                        aria-label="حذف برنامه"
+                        aria-label={t('wtDeleteRoutine')}
                         className="inline-flex shrink-0 items-center justify-center rounded-full p-3 text-[rgb(var(--ctp-subtext0))] transition-all duration-150 ease-out hover:bg-[rgb(var(--ctp-surface1)/0.5)] hover:text-[rgb(var(--ctp-red))] active:scale-90 active:opacity-70"
                       >
                         <Icon name="delete" className="text-[20px]" />
@@ -271,7 +277,7 @@ export default function WorkoutTab({
                 <div className="animate-fade-slide-in rounded-2xl border border-[rgb(var(--ctp-surface1)/0.4)] bg-[rgb(var(--ctp-surface0))] p-4 shadow-md shadow-black/10">
                   <NameEditRow
                     initialValue=""
-                    placeholder="مثلاً Push Day"
+                    placeholder={t('wtRoutineNamePlaceholder')}
                     onSave={handleCreateRoutine}
                     onCancel={() => setIsAddingRoutine(false)}
                     isSaving={isCreatingRoutine}
@@ -284,7 +290,7 @@ export default function WorkoutTab({
                   className="flex items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-[rgb(var(--ctp-surface1))] py-4 text-lg font-bold text-[rgb(var(--ctp-subtext0))] transition-all duration-150 ease-out hover:border-[rgb(var(--ctp-mauve))] hover:text-[rgb(var(--ctp-mauve))] active:scale-[0.98] active:opacity-80"
                 >
                   <Icon name="add" className="text-[22px]" />
-                  ایجاد برنامه جدید
+                  {t('wtCreateRoutine')}
                 </button>
               )}
             </div>
@@ -316,13 +322,21 @@ export default function WorkoutTab({
             <button
               type="button"
               onClick={() => onTabChange('history')}
-              aria-label="خروج موقت از تمرین"
+              aria-label={t('wtBackAriaLabel')}
               className="inline-flex shrink-0 items-center justify-center rounded-full p-2 text-[rgb(var(--ctp-subtext0))] transition-all duration-150 ease-out hover:bg-[rgb(var(--ctp-surface1)/0.5)] hover:text-[rgb(var(--ctp-mauve))] active:scale-90 active:opacity-70"
             >
-              <Icon name="chevron_right" className="text-[26px]" />
+              {/* This chevron reads as "back" because it points toward the
+                  start of the reading direction (right in RTL). In LTR
+                  (English) "back" points left instead, so the icon is
+                  mirrored with a 180° rotation rather than swapped for a
+                  different icon. */}
+              <Icon
+                name="chevron_right"
+                className={`text-[26px] ${dir === 'ltr' ? 'rotate-180' : ''}`}
+              />
             </button>
             <div className="flex min-w-0 flex-col">
-              <span className="text-sm text-[rgb(var(--ctp-subtext0))]">برنامه</span>
+              <span className="text-sm text-[rgb(var(--ctp-subtext0))]">{t('wtRoutineLabel')}</span>
               <h1 className="truncate text-2xl font-bold">{activeSession.routineName}</h1>
             </div>
           </div>
@@ -335,7 +349,9 @@ export default function WorkoutTab({
 
             if (!isActive) {
               const setsSummary =
-                ex.sets.length > 0 ? `${ex.sets.length} ست ثبت شده` : 'هنوز ستی ثبت نشده'
+                ex.sets.length > 0
+                  ? t('wtSetsLoggedTemplate').replace('{n}', ex.sets.length)
+                  : t('wtNoSetsLogged')
 
               return (
                 <div
@@ -351,7 +367,7 @@ export default function WorkoutTab({
                     onClick={() => setActiveExerciseId(ex.exerciseId)}
                     className="shrink-0 rounded-xl bg-[rgb(var(--ctp-mauve))] px-4 py-3 text-sm font-bold text-[rgb(var(--ctp-base))] transition-all duration-150 ease-out active:scale-[0.97] active:opacity-80"
                   >
-                    انجام حرکت
+                    {t('wtDoExercise')}
                   </button>
                 </div>
               )
@@ -383,7 +399,7 @@ export default function WorkoutTab({
                       <button
                         type="button"
                         onClick={() => toggleChart(ex.exerciseId)}
-                        aria-label="نمودار پیشرفت"
+                        aria-label={t('wtProgressChartAria')}
                         aria-expanded={expandedCharts.has(ex.exerciseId)}
                         className={`inline-flex shrink-0 items-center justify-center rounded-full p-2.5 transition-all duration-150 ease-out hover:bg-[rgb(var(--ctp-surface1)/0.5)] active:scale-90 active:opacity-70 ${
                           expandedCharts.has(ex.exerciseId)
@@ -396,7 +412,7 @@ export default function WorkoutTab({
                       <button
                         type="button"
                         onClick={() => setEditingExerciseId(ex.exerciseId)}
-                        aria-label="ویرایش نام حرکت"
+                        aria-label={t('wtEditExerciseName')}
                         className="inline-flex shrink-0 items-center justify-center rounded-full p-2.5 text-[rgb(var(--ctp-subtext0))] transition-all duration-150 ease-out hover:bg-[rgb(var(--ctp-surface1)/0.5)] hover:text-[rgb(var(--ctp-mauve))] active:scale-90 active:opacity-70"
                       >
                         <Icon name="edit" className="text-[18px]" />
@@ -404,7 +420,7 @@ export default function WorkoutTab({
                       <button
                         type="button"
                         onClick={() => handleDeleteExercise(ex.exerciseId, ex.exerciseName)}
-                        aria-label="حذف حرکت"
+                        aria-label={t('wtDeleteExercise')}
                         className="inline-flex shrink-0 items-center justify-center rounded-full p-2.5 text-[rgb(var(--ctp-subtext0))] transition-all duration-150 ease-out hover:bg-[rgb(var(--ctp-surface1)/0.5)] hover:text-[rgb(var(--ctp-red))] active:scale-90 active:opacity-70"
                       >
                         <Icon name="delete" className="text-[18px]" />
@@ -412,7 +428,7 @@ export default function WorkoutTab({
                       <button
                         type="button"
                         onClick={() => setActiveExerciseId(null)}
-                        aria-label="بستن حرکت"
+                        aria-label={t('wtCloseExercise')}
                         className="inline-flex shrink-0 items-center justify-center rounded-full p-2.5 text-[rgb(var(--ctp-subtext0))] transition-all duration-150 ease-out hover:bg-[rgb(var(--ctp-surface1)/0.5)] hover:text-[rgb(var(--ctp-mauve))] active:scale-90 active:opacity-70"
                       >
                         <Icon name="expand_less" className="text-[18px]" />
@@ -420,7 +436,7 @@ export default function WorkoutTab({
                     </div>
                     {ex.restTime > 0 && (
                       <p className="text-xs text-[rgb(var(--ctp-subtext0))]">
-                        استراحت پیش‌فرض: {ex.restTime} ثانیه
+                        {t('wtDefaultRestTemplate').replace('{n}', ex.restTime)}
                       </p>
                     )}
                     {expandedCharts.has(ex.exerciseId) && (
@@ -439,16 +455,19 @@ export default function WorkoutTab({
                   <div className="mb-3 rounded-xl border border-[rgb(var(--ctp-mauve)/0.3)] bg-[rgb(var(--ctp-mauve)/0.08)] p-3 shadow-inner">
                     <div className="mb-1 flex items-center justify-between gap-2">
                       <span className="text-sm font-bold text-[rgb(var(--ctp-mauve))]">
-                        رکورد جلسه قبل
+                        {t('wtPreviousRecord')}
                       </span>
                       <span className="text-xs text-[rgb(var(--ctp-subtext0))]">
-                        {formatSessionDate(previous.session.date)}
+                        {formatSessionDate(previous.session.date, language)}
                       </span>
                     </div>
                     <ul className="flex flex-col gap-0.5">
                       {previous.exercise.sets.map((set, i) => (
                         <li key={set.id} className="text-sm text-[rgb(var(--ctp-text))]">
-                          ست {i + 1}: {set.weight} kg × {set.reps} تکرار
+                          {t('wtSetLineTemplate')
+                            .replace('{n}', i + 1)
+                            .replace('{weight}', set.weight)
+                            .replace('{reps}', set.reps)}
                           {set.note && (
                             <span className="whitespace-pre-wrap break-words text-[rgb(var(--ctp-subtext0))]">
                               {' '}
@@ -471,13 +490,13 @@ export default function WorkoutTab({
                         htmlFor={`weight-${ex.exerciseId}`}
                         className="text-sm font-medium text-[rgb(var(--ctp-subtext0))]"
                       >
-                        وزنه (kg)
+                        {t('historyWeight')}
                       </label>
                       <input
                         id={`weight-${ex.exerciseId}`}
                         type="text"
                         inputMode="decimal"
-                        placeholder="۰"
+                        placeholder={t('wtZeroPlaceholder')}
                         value={draft.weight}
                         onChange={(e) =>
                           updateDraft(
@@ -495,13 +514,13 @@ export default function WorkoutTab({
                         htmlFor={`reps-${ex.exerciseId}`}
                         className="text-sm font-medium text-[rgb(var(--ctp-subtext0))]"
                       >
-                        تکرار
+                        {t('historyReps')}
                       </label>
                       <input
                         id={`reps-${ex.exerciseId}`}
                         type="text"
                         inputMode="numeric"
-                        placeholder="۰"
+                        placeholder={t('wtZeroPlaceholder')}
                         value={draft.reps}
                         onChange={(e) =>
                           updateDraft(ex.exerciseId, 'reps', sanitizeNumericInput(e.target.value))
@@ -516,14 +535,14 @@ export default function WorkoutTab({
                       htmlFor={`note-${ex.exerciseId}`}
                       className="text-sm font-medium text-[rgb(var(--ctp-subtext0))]"
                     >
-                      یادداشت{' '}
-                      <span className="text-[rgb(var(--ctp-subtext0))]">(اختیاری)</span>
+                      {t('historyNote')}{' '}
+                      <span className="text-[rgb(var(--ctp-subtext0))]">{t('wtOptional')}</span>
                     </label>
                     <input
                       id={`note-${ex.exerciseId}`}
                       type="text"
                       inputMode="text"
-                      placeholder="مثلاً ست اضافی یا مکث دو ثانیه"
+                      placeholder={t('wtNotePlaceholder')}
                       value={draft.note}
                       onChange={(e) => updateDraft(ex.exerciseId, 'note', e.target.value)}
                       className="rounded-xl border border-[rgb(var(--ctp-surface1)/0.6)] bg-[rgb(var(--ctp-mantle))] px-4 py-4 text-lg text-[rgb(var(--ctp-text))] placeholder-[rgb(var(--ctp-subtext0))] transition-all duration-150 ease-out focus:border-[rgb(var(--ctp-mauve))] focus:outline-none focus:ring-2 focus:ring-[rgb(var(--ctp-mauve))]"
@@ -538,7 +557,7 @@ export default function WorkoutTab({
                     {isSubmittingSet && (
                       <span className="h-5 w-5 animate-spin rounded-full border-2 border-[rgb(var(--ctp-base))]/70 border-t-transparent" />
                     )}
-                    {isSubmittingSet ? 'در حال ثبت...' : 'ثبت ست'}
+                    {isSubmittingSet ? t('wtSubmittingSet') : t('wtSubmitSet')}
                   </button>
                 </form>
 
@@ -552,7 +571,7 @@ export default function WorkoutTab({
                   >
                     <div className="mb-2 flex items-center justify-between gap-2">
                       <span className="text-sm font-bold text-[rgb(var(--ctp-text))]">
-                        {timer.isOverdue ? 'زمان تمام شد' : 'استراحت'}
+                        {timer.isOverdue ? t('wtTimeUp') : t('wtResting')}
                       </span>
                       <div className="flex items-center gap-2">
                         <span
@@ -570,7 +589,7 @@ export default function WorkoutTab({
                           className="inline-flex items-center gap-1 rounded-full bg-[rgb(var(--ctp-surface1))] px-3 py-2 text-xs font-bold text-[rgb(var(--ctp-subtext0))] transition-all duration-150 ease-out hover:opacity-80 active:scale-90 active:opacity-70"
                         >
                           <Icon name="close" className="text-[16px]" />
-                          لغو
+                          {t('wtCancel')}
                         </button>
                       </div>
                     </div>
@@ -635,7 +654,7 @@ export default function WorkoutTab({
               className="flex items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-[rgb(var(--ctp-surface1))] py-4 text-lg font-bold text-[rgb(var(--ctp-subtext0))] transition-all duration-150 ease-out hover:border-[rgb(var(--ctp-mauve))] hover:text-[rgb(var(--ctp-mauve))] active:scale-[0.98] active:opacity-80"
             >
               <Icon name="add" className="text-[22px]" />
-              افزودن حرکت
+              {t('wtAddExercise')}
             </button>
           )}
         </div>
@@ -651,14 +670,14 @@ export default function WorkoutTab({
         >
           <span
             aria-hidden="true"
-            className="absolute inset-y-0 right-0 bg-[rgb(var(--ctp-red)/0.25)]"
+            className="absolute inset-y-0 start-0 bg-[rgb(var(--ctp-red)/0.25)]"
             style={{
               width: isHoldingEnd ? '100%' : '0%',
               transition: `width ${isHoldingEnd ? END_WORKOUT_HOLD_MS : 150}ms ${isHoldingEnd ? 'linear' : 'ease-out'}`,
             }}
           />
           <span className="relative">
-            {isHoldingEnd ? 'نگه دارید...' : 'برای پایان، لمس کرده و نگه دارید'}
+            {isHoldingEnd ? t('wtHolding') : t('wtHoldToEnd')}
           </span>
         </button>
       </div>

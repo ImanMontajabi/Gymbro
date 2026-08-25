@@ -44,7 +44,9 @@ export function LanguageProvider({ children }) {
   }
 
   return (
-    <LanguageContext.Provider value={{ language, setLanguage, cycleLanguage, t }}>
+    <LanguageContext.Provider
+      value={{ language, setLanguage, cycleLanguage, t, dir: LANGUAGE_DIR[language] }}
+    >
       {children}
     </LanguageContext.Provider>
   )

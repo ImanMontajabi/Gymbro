@@ -1,9 +1,11 @@
 import { useState } from 'react'
 import Icon from './Icon'
+import { useLanguage } from '../context/LanguageContext'
 
 // Shared inline "text input + confirm + cancel" row, used for renaming a
 // routine/exercise and for the two "add new" forms.
 export default function NameEditRow({ initialValue, placeholder, onSave, onCancel, isSaving = false }) {
+  const { t } = useLanguage()
   const [draft, setDraft] = useState(initialValue)
 
   function save() {
@@ -32,7 +34,7 @@ export default function NameEditRow({ initialValue, placeholder, onSave, onCance
         type="button"
         onClick={save}
         disabled={isSaving}
-        aria-label="ذخیره"
+        aria-label={t('save')}
         className="inline-flex shrink-0 items-center justify-center rounded-full p-3.5 text-[rgb(var(--ctp-green))] transition-all duration-150 ease-out hover:bg-[rgb(var(--ctp-surface1)/0.5)] active:scale-90 active:opacity-70 disabled:opacity-60"
       >
         {isSaving ? (
@@ -45,7 +47,7 @@ export default function NameEditRow({ initialValue, placeholder, onSave, onCance
         type="button"
         onClick={onCancel}
         disabled={isSaving}
-        aria-label="لغو"
+        aria-label={t('wtCancel')}
         className="inline-flex shrink-0 items-center justify-center rounded-full p-3.5 text-[rgb(var(--ctp-subtext0))] transition-all duration-150 ease-out hover:bg-[rgb(var(--ctp-surface1)/0.5)] hover:text-[rgb(var(--ctp-red))] active:scale-90 active:opacity-70 disabled:opacity-60"
       >
         <Icon name="close" className="text-[20px]" />
