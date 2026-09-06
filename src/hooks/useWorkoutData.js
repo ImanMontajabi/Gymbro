@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { arrayMove } from '@dnd-kit/sortable'
 import toast from 'react-hot-toast'
 import { supabase } from '../supabase'
@@ -17,6 +17,59 @@ function loadStoredDrafts() {
     return raw ? JSON.parse(raw) : {}
   } catch {
     return {}
+  }
+}
+
+// Crash recovery for the in-progress workout. Mobile OSes kill a backgrounded
+// PWA tab freely (more so now that the app no longer holds a wake lock), and
+// the hard reload that follows loses all React state. Supabase can't be
+// relied on to restore it: the initial load fails outright when the phone is
+// offline in the gym, and even online it races the offline write queue's
+// replay, so the server copy can lag behind sets that were logged locally.
+// The local copy is therefore always at least as fresh as the server's, and
+// is what the reload restores from. Shape: { userId, activeSession,
+// activeExerciseId } — `userId` so a session cached by one account is never
+// resurrected for a different account signing in on the same device.
+const ACTIVE_WORKOUT_STORAGE_KEY = 'gymbro_active_workout'
+
+function loadStoredWorkout() {
+  try {
+    const raw = localStorage.getItem(ACTIVE_WORKOUT_STORAGE_KEY)
+    if (!raw) return null
+    const parsed = JSON.parse(raw)
+    // Reject anything that isn't the expected shape (corrupt write, an older
+    // deploy's format, hand-edited storage) rather than letting it crash the
+    // workout view on mount.
+    if (
+      !parsed ||
+      typeof parsed !== 'object' ||
+      typeof parsed.userId !== 'string' ||
+      !parsed.activeSession ||
+      typeof parsed.activeSession !== 'object' ||
+      !Array.isArray(parsed.activeSession.exercises)
+    ) {
+      return null
+    }
+    return parsed
+  } catch {
+    return null
+  }
+}
+
+function saveStoredWorkout(data) {
+  try {
+    localStorage.setItem(ACTIVE_WORKOUT_STORAGE_KEY, JSON.stringify(data))
+  } catch {
+    // localStorage unavailable (private mode, quota) — the session still
+    // works for this tab's lifetime, it just won't survive a tab kill.
+  }
+}
+
+function clearStoredWorkout() {
+  try {
+    localStorage.removeItem(ACTIVE_WORKOUT_STORAGE_KEY)
+  } catch {
+    // ignore — same as above
   }
 }
 
@@ -63,9 +116,17 @@ function logSupabaseError(error, message = 'خطایی رخ داد. دوباره
 // used for every write below instead of calling `supabase` directly, so
 // each one is automatically queued and replayed later if offline.
 export function useWorkoutData({ user, timer, onDataCleared, writeMutation }) {
+  const userId = user?.id ?? null
+
+  // Read once on mount. Whether the cached session actually belongs to the
+  // account that ends up signed in can't be known yet (auth is still
+  // resolving on first render), so it's restored optimistically here and
+  // the load effect below discards it if the owner turns out to differ.
+  const [restored] = useState(loadStoredWorkout)
+
   const [routines, setRoutines] = useState([])
   const [history, setHistory] = useState([])
-  const [activeSession, setActiveSession] = useState(null)
+  const [activeSession, setActiveSession] = useState(() => restored?.activeSession ?? null)
   const [dataLoading, setDataLoading] = useState(true)
   const [drafts, setDrafts] = useState(loadStoredDrafts) // { [exerciseId]: { weight, reps, note } }
 
@@ -85,19 +146,61 @@ export function useWorkoutData({ user, timer, onDataCleared, writeMutation }) {
   // History/Coach tab — a local useState would reset to null on that
   // unmount, collapsing the expanded card every time the user navigated
   // away and back.
-  const [activeExerciseId, setActiveExerciseId] = useState(null)
+  const [activeExerciseId, setActiveExerciseId] = useState(
+    () => restored?.activeExerciseId ?? null
+  )
+
+  // Mirror the in-progress workout to localStorage on every change (a set
+  // logged, an exercise expanded/added/renamed...). A null session means the
+  // workout ended — finished, cleared, discarded as another account's, or
+  // the user logged out — and that's the single place the cache is removed,
+  // so no terminating code path can forget to. While auth is still
+  // resolving (`userId` null) a restored session is left as-is in storage
+  // rather than re-saved without an owner.
+  useEffect(() => {
+    if (!activeSession) {
+      clearStoredWorkout()
+      return
+    }
+    if (!userId) return
+    saveStoredWorkout({ userId, activeSession, activeExerciseId })
+  }, [userId, activeSession, activeExerciseId])
 
   const [isCreatingRoutine, setIsCreatingRoutine] = useState(false)
   const [addingSetExerciseId, setAddingSetExerciseId] = useState(null)
 
+  // `user` is null both while auth is still resolving on first render AND
+  // after a real logout. Only the latter should wipe state — on the initial
+  // pass, nulling `activeSession` would also erase the crash-recovery cache
+  // (via the sync effect above) before auth even had a chance to restore it.
+  const hadUserRef = useRef(false)
+
   // Load everything from Supabase once we know who's signed in.
+  //
+  // Keyed on `userId`, not the `user` object: supabase auth-js refreshes the
+  // token when the tab becomes visible again and emits a *new* session
+  // object each time, so depending on `user` re-ran this whole load — with
+  // a LoadingScreen flash and a server-copy overwrite of the live session —
+  // every time the user came back to the app. The data only needs
+  // re-fetching when the *account* changes.
   useEffect(() => {
-    if (!user) {
-      setRoutines([])
-      setHistory([])
-      setActiveSession(null)
+    if (!userId) {
+      if (hadUserRef.current) {
+        setRoutines([])
+        setHistory([])
+        setActiveSession(null)
+        setActiveExerciseId(null)
+      }
       setDataLoading(false)
       return
+    }
+    hadUserRef.current = true
+
+    // The cached session was written by a different account on this device
+    // — never show one user's workout to another.
+    if (restored && restored.userId !== userId) {
+      setActiveSession(null)
+      setActiveExerciseId(null)
     }
 
     let cancelled = false
@@ -124,8 +227,16 @@ export function useWorkoutData({ user, timer, onDataCleared, writeMutation }) {
       if (historyRes.error) console.error(historyRes.error)
 
       setRoutines((routinesRes.data ?? []).map(mapRoutineRow))
-      setActiveSession(activeRes.data ? mapSessionRow(activeRes.data) : null)
       setHistory((historyRes.data ?? []).map(mapSessionRow))
+      // The locally cached session wins over the server's: every mutation
+      // updates local state before (or, when offline, instead of) reaching
+      // Supabase, so the local copy is never behind — and if this load
+      // failed outright (offline), the server "copy" is just an error. The
+      // server is only consulted when there's nothing cached, e.g. first
+      // run after this deploy, or storage being unavailable.
+      setActiveSession(
+        (current) => current ?? (activeRes.data ? mapSessionRow(activeRes.data) : null)
+      )
       setDataLoading(false)
     }
 
@@ -133,7 +244,7 @@ export function useWorkoutData({ user, timer, onDataCleared, writeMutation }) {
     return () => {
       cancelled = true
     }
-  }, [user])
+  }, [userId, restored])
 
   const previousRecords = useMemo(() => {
     const map = {}
