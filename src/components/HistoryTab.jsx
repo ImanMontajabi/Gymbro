@@ -51,6 +51,7 @@ export default function HistoryTab({
   isOnline,
   onClearData,
   onUpdateHistorySession,
+  onDeleteHistorySession,
   activeTab,
   onTabChange,
 }) {
@@ -97,6 +98,22 @@ export default function HistoryTab({
     } catch {
       toast.error(t('historyCopyFailed'))
     }
+  }
+
+  // The confirm + toasts live here rather than in the hook so they render in
+  // the active UI language — same split as the edit modal's save flow.
+  async function handleDeleteSession(session) {
+    const confirmed = window.confirm(
+      t('historyDeleteConfirmTemplate').replace('{name}', session.routineName)
+    )
+    if (!confirmed) return
+
+    const { error } = await onDeleteHistorySession(session.id)
+    if (error) {
+      toast.error(t('historyDeleteFailed'))
+      return
+    }
+    toast.success(t('historyDeleteSuccess'))
   }
 
   const settingsModal = isSettingsOpen && (
@@ -225,14 +242,24 @@ export default function HistoryTab({
                             .replace('{exercises}', session.exercises.length)
                             .replace('{sets}', totalSets)}
                         </p>
-                        <button
-                          type="button"
-                          onClick={() => setEditingSession(session)}
-                          className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[rgb(var(--ctp-surface1)/0.6)] px-3 py-1.5 text-xs font-bold text-[rgb(var(--ctp-mauve))] transition-all duration-150 ease-out hover:opacity-80 active:scale-90 active:opacity-70"
-                        >
-                          <Icon name="edit" className="text-[14px]" />
-                          {t('historyEdit')}
-                        </button>
+                        <div className="flex shrink-0 items-center gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => setEditingSession(session)}
+                            className="inline-flex items-center gap-1 rounded-full bg-[rgb(var(--ctp-surface1)/0.6)] px-3 py-1.5 text-xs font-bold text-[rgb(var(--ctp-mauve))] transition-all duration-150 ease-out hover:opacity-80 active:scale-90 active:opacity-70"
+                          >
+                            <Icon name="edit" className="text-[14px]" />
+                            {t('historyEdit')}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteSession(session)}
+                            className="inline-flex items-center gap-1 rounded-full bg-[rgb(var(--ctp-surface1)/0.6)] px-3 py-1.5 text-xs font-bold text-[rgb(var(--ctp-red))] transition-all duration-150 ease-out hover:opacity-80 active:scale-90 active:opacity-70"
+                          >
+                            <Icon name="delete" className="text-[14px]" />
+                            {t('historyDelete')}
+                          </button>
+                        </div>
                       </div>
                     </li>
                   )

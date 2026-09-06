@@ -59,9 +59,14 @@ export function formatSessionForAI(session) {
   const lines = [`Date: ${session.date.slice(0, 10)}`, `Routine: ${session.routineName}`, '']
 
   for (const exercise of session.exercises) {
+    // Weight 0 is a bodyweight set and `reps` holds seconds for time-based
+    // exercises — spelled out here so the LLM doesn't read "0kg x 30" as a
+    // 30-rep set with a broken weight.
     const setsLabel = exercise.sets
       .map((set, i) => {
-        const base = `Set ${i + 1} (${set.weight}kg x ${set.reps})`
+        const weight = Number(set.weight) === 0 ? 'BW' : `${set.weight}kg`
+        const reps = exercise.isTimeBased ? `${set.reps}s` : set.reps
+        const base = `Set ${i + 1} (${weight} x ${reps})`
         return set.note ? `${base} - ${set.note}` : base
       })
       .join(', ')

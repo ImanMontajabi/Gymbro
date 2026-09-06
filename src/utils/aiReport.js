@@ -23,7 +23,11 @@ export function generateWorkoutReport(routines, history) {
     const exerciseMap = routineMap[session.routineName] || {}
 
     for (const ex of session.exercises) {
-      const stats = exerciseMap[ex.exerciseName] || { sets: [], maxWeight: 0 }
+      const stats = exerciseMap[ex.exerciseName] || {
+        sets: [],
+        maxWeight: 0,
+        isTimeBased: !!ex.isTimeBased,
+      }
       for (const set of ex.sets) {
         stats.sets.push({ weight: set.weight, reps: set.reps })
         if (set.weight > stats.maxWeight) stats.maxWeight = set.weight
@@ -34,11 +38,21 @@ export function generateWorkoutReport(routines, history) {
     routineMap[session.routineName] = exerciseMap
   }
 
+  // Weight 0 is a bodyweight set ("BW"), and for time-based exercises the
+  // reps value is seconds — both spelled out so the model doesn't misread
+  // a plank as "0kg x 45 reps".
   const routineBlocks = Object.entries(routineMap).map(([routineName, exerciseMap]) => {
     const exerciseLines = Object.entries(exerciseMap)
       .map(([exerciseName, stats]) => {
-        const setsText = stats.sets.map((s) => `${s.weight}kg x ${s.reps}`).join(', ')
-        return `- Exercise: ${exerciseName} | Sets: ${setsText} (Max: ${stats.maxWeight}kg)`
+        const setsText = stats.sets
+          .map((s) => {
+            const weight = Number(s.weight) === 0 ? 'BW' : `${s.weight}kg`
+            const reps = stats.isTimeBased ? `${s.reps}s` : s.reps
+            return `${weight} x ${reps}`
+          })
+          .join(', ')
+        const max = stats.maxWeight === 0 ? 'BW' : `${stats.maxWeight}kg`
+        return `- Exercise: ${exerciseName} | Sets: ${setsText} (Max: ${max})`
       })
       .join('\n')
     return `[Routine: ${routineName}]\n${exerciseLines}`

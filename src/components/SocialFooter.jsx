@@ -28,7 +28,7 @@ function MailIcon(props) {
 
 const LINKS = [
   { label: 'GitHub', href: 'https://github.com/ImanMontajabi/Gymbro', Icon: GithubIcon, external: true },
-  { label: 'X (Twitter)', href: 'https://x.com/imanmtj', Icon: XIcon, external: true },
+  { label: 'X (Twitter)', href: 'https://x.com/1man_de', Icon: XIcon, external: true },
   { label: 'Email', href: 'mailto:iman.montajabi@gmail.com', Icon: MailIcon, external: false },
 ]
 

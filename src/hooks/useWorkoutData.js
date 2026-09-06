@@ -82,7 +82,12 @@ function mapRoutineRow(row) {
     exercises: (row.exercises ?? [])
       .slice()
       .sort((a, b) => new Date(a.created_at) - new Date(b.created_at))
-      .map((ex) => ({ id: ex.id, name: ex.name, restTime: ex.rest_time })),
+      .map((ex) => ({
+        id: ex.id,
+        name: ex.name,
+        restTime: ex.rest_time,
+        isTimeBased: ex.is_time_based ?? false,
+      })),
   }
 }
 
@@ -210,7 +215,7 @@ export function useWorkoutData({ user, timer, onDataCleared, writeMutation }) {
       const [routinesRes, activeRes, historyRes] = await Promise.all([
         supabase
           .from('routines')
-          .select('id, name, exercises(id, name, rest_time, created_at)')
+          .select('id, name, exercises(id, name, rest_time, is_time_based, created_at)')
           .order('created_at'),
         supabase.from('sessions').select('*').eq('status', 'active').maybeSingle(),
         supabase
@@ -322,6 +327,7 @@ export function useWorkoutData({ user, timer, onDataCleared, writeMutation }) {
       exerciseId: ex.id,
       exerciseName: ex.name,
       restTime: ex.restTime || 0,
+      isTimeBased: !!ex.isTimeBased,
       sets: [],
     }))
 
@@ -347,8 +353,8 @@ export function useWorkoutData({ user, timer, onDataCleared, writeMutation }) {
 
   // --- Exercise CRUD (inside workout view) ---------------------------------
 
-  function handleAddExercise({ name, restTime }) {
-    const newExercise = { id: crypto.randomUUID(), name, restTime }
+  function handleAddExercise({ name, restTime, isTimeBased = false }) {
+    const newExercise = { id: crypto.randomUUID(), name, restTime, isTimeBased }
 
     setRoutines((prev) =>
       prev.map((r) =>
@@ -358,7 +364,7 @@ export function useWorkoutData({ user, timer, onDataCleared, writeMutation }) {
 
     const updatedExercises = [
       ...activeSession.exercises,
-      { exerciseId: newExercise.id, exerciseName: name, restTime, sets: [] },
+      { exerciseId: newExercise.id, exerciseName: name, restTime, isTimeBased, sets: [] },
     ]
     setActiveSession({ ...activeSession, exercises: updatedExercises })
     setIsAddingExercise(false)
@@ -372,6 +378,7 @@ export function useWorkoutData({ user, timer, onDataCleared, writeMutation }) {
         user_id: user.id,
         name,
         rest_time: restTime,
+        is_time_based: isTimeBased,
       },
     }).then(({ error, queued }) => {
       logSupabaseError(error)
@@ -386,14 +393,14 @@ export function useWorkoutData({ user, timer, onDataCleared, writeMutation }) {
     }).then(({ error }) => logSupabaseError(error))
   }
 
-  function handleRenameExercise(exerciseId, { name, restTime }) {
+  function handleRenameExercise(exerciseId, { name, restTime, isTimeBased = false }) {
     setRoutines((prev) =>
       prev.map((r) =>
         r.id === activeSession.routineId
           ? {
               ...r,
               exercises: r.exercises.map((ex) =>
-                ex.id === exerciseId ? { ...ex, name, restTime } : ex
+                ex.id === exerciseId ? { ...ex, name, restTime, isTimeBased } : ex
               ),
             }
           : r
@@ -401,7 +408,7 @@ export function useWorkoutData({ user, timer, onDataCleared, writeMutation }) {
     )
 
     const updatedExercises = activeSession.exercises.map((ex) =>
-      ex.exerciseId === exerciseId ? { ...ex, exerciseName: name, restTime } : ex
+      ex.exerciseId === exerciseId ? { ...ex, exerciseName: name, restTime, isTimeBased } : ex
     )
     setActiveSession({ ...activeSession, exercises: updatedExercises })
     setEditingExerciseId(null)
@@ -409,7 +416,7 @@ export function useWorkoutData({ user, timer, onDataCleared, writeMutation }) {
     writeMutation({
       table: 'exercises',
       type: 'update',
-      payload: { name, rest_time: restTime },
+      payload: { name, rest_time: restTime, is_time_based: isTimeBased },
       match: { column: 'id', value: exerciseId },
     }).then(({ error }) => logSupabaseError(error))
 
@@ -459,7 +466,11 @@ export function useWorkoutData({ user, timer, onDataCleared, writeMutation }) {
   async function handleAddSet(exerciseId, e) {
     e.preventDefault()
     const draft = getDraft(exerciseId)
-    if (!(Number(draft.weight) > 0 && Number(draft.reps) > 0)) return
+    // Weight 0 is a valid bodyweight set, but must be typed explicitly (not
+    // an empty field); reps/seconds must be positive. Same rule as the
+    // submit button's `canSubmit` in WorkoutTab.
+    const hasValidWeight = draft.weight !== '' && Number(draft.weight) >= 0
+    if (!(hasValidWeight && Number(draft.reps) > 0)) return
 
     // handleEditSet marks the draft it populates as `isEditing` — submitting
     // that draft is fixing up a set that already happened, not logging a
@@ -639,6 +650,27 @@ export function useWorkoutData({ user, timer, onDataCleared, writeMutation }) {
     return { error: null }
   }
 
+  // Same isolation as handleUpdateHistorySession: only `history` and the
+  // one `sessions` row are touched, never `activeSession`. The confirm
+  // dialog and toasts belong to the caller (HistoryTab) so they can be
+  // shown in the active UI language. Routed through the offline queue like
+  // every other single-row write, so it works in the gym without signal.
+  async function handleDeleteHistorySession(sessionId) {
+    const { error } = await writeMutation({
+      table: 'sessions',
+      type: 'delete',
+      match: { column: 'id', value: sessionId },
+    })
+
+    if (error) {
+      console.error(error)
+      return { error }
+    }
+
+    setHistory((prev) => prev.filter((session) => session.id !== sessionId))
+    return { error: null }
+  }
+
   // Deliberately NOT routed through the offline queue: queuing a "wipe
   // everything" mutation would risk it firing later and deleting workouts
   // logged in the meantime, in an unpredictable order relative to those
@@ -711,5 +743,6 @@ export function useWorkoutData({ user, timer, onDataCleared, writeMutation }) {
     handleFinishWorkout,
     handleClearAllData,
     handleUpdateHistorySession,
+    handleDeleteHistorySession,
   }
 }

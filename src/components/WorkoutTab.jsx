@@ -12,6 +12,7 @@ import { useLanguage } from '../context/LanguageContext'
 import { formatSessionDate } from '../utils/history'
 import { formatTime } from '../utils/time'
 import { sanitizeNumericInput } from '../utils/numbers'
+import { formatSetLine } from '../utils/sets'
 
 // recharts is heavy and most exercise cards are never expanded, so it's
 // split into its own chunk instead of bloating WorkoutTab's (unlazy, always
@@ -21,7 +22,7 @@ const ExerciseChart = lazy(() => import('./ExerciseChart'))
 // One row in a set list, draggable via its handle. dnd-kit requires
 // `useSortable` to run inside the item component itself (it can't be called
 // from a loop in the parent), so this is split out rather than inlined.
-function SortableSetRow({ set, index, onEdit, onDelete }) {
+function SortableSetRow({ set, index, isTimeBased, onEdit, onDelete }) {
   const { t } = useLanguage()
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: set.id,
@@ -52,10 +53,7 @@ function SortableSetRow({ set, index, onEdit, onDelete }) {
         </button>
         <div className="flex min-w-0 flex-col gap-0.5">
           <span className="truncate text-[rgb(var(--ctp-text))]">
-            {t('wtSetLineTemplate')
-              .replace('{n}', index + 1)
-              .replace('{weight}', set.weight)
-              .replace('{reps}', set.reps)}
+            {formatSetLine(t, { index, weight: set.weight, reps: set.reps, isTimeBased })}
           </span>
           {set.note && (
             <span className="whitespace-pre-wrap break-words text-sm text-[rgb(var(--ctp-subtext0))]">
@@ -379,7 +377,12 @@ export default function WorkoutTab({
 
             const draft = getDraft(ex.exerciseId)
             const previous = previousRecords[ex.exerciseName]
-            const canSubmit = Number(draft.weight) > 0 && Number(draft.reps) > 0
+            // Weight must be typed explicitly — 0 is a valid bodyweight set —
+            // so an empty field never silently logs as 0 kg. Reps (or seconds
+            // for a time-based exercise) must be positive. Mirrors the
+            // server-side check in useWorkoutData's handleAddSet.
+            const canSubmit =
+              draft.weight !== '' && Number(draft.weight) >= 0 && Number(draft.reps) > 0
             const isSubmittingSet = addingSetExerciseId === ex.exerciseId
 
             return (
@@ -392,6 +395,7 @@ export default function WorkoutTab({
                     <ExerciseEditRow
                       initialName={ex.exerciseName}
                       initialRestTime={ex.restTime}
+                      initialIsTimeBased={!!ex.isTimeBased}
                       onSave={(data) => handleRenameExercise(ex.exerciseId, data)}
                       onCancel={() => setEditingExerciseId(null)}
                     />
@@ -468,10 +472,15 @@ export default function WorkoutTab({
                     <ul className="flex flex-col gap-0.5">
                       {previous.exercise.sets.map((set, i) => (
                         <li key={set.id} className="text-sm text-[rgb(var(--ctp-text))]">
-                          {t('wtSetLineTemplate')
-                            .replace('{n}', i + 1)
-                            .replace('{weight}', set.weight)
-                            .replace('{reps}', set.reps)}
+                          {formatSetLine(t, {
+                            index: i,
+                            weight: set.weight,
+                            reps: set.reps,
+                            // Sessions logged before the flag existed have
+                            // no snapshot value — fall back to the current
+                            // exercise's setting.
+                            isTimeBased: previous.exercise.isTimeBased ?? !!ex.isTimeBased,
+                          })}
                           {set.note && (
                             <span className="whitespace-pre-wrap break-words text-[rgb(var(--ctp-subtext0))]">
                               {' '}
@@ -518,7 +527,7 @@ export default function WorkoutTab({
                         htmlFor={`reps-${ex.exerciseId}`}
                         className="text-sm font-medium text-[rgb(var(--ctp-subtext0))]"
                       >
-                        {t('historyReps')}
+                        {t(ex.isTimeBased ? 'wtSecondsLabel' : 'historyReps')}
                       </label>
                       <input
                         id={`reps-${ex.exerciseId}`}
@@ -630,6 +639,7 @@ export default function WorkoutTab({
                             key={set.id}
                             set={set}
                             index={i}
+                            isTimeBased={!!ex.isTimeBased}
                             onEdit={() => handleEditSet(ex.exerciseId, set.id)}
                             onDelete={() => handleDeleteSet(ex.exerciseId, set.id)}
                           />

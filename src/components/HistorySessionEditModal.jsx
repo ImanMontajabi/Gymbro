@@ -106,11 +106,14 @@ export default function HistorySessionEditModal({ session, onClose, onSave }) {
                           }
                           className="w-16 min-w-0 rounded-lg border border-[rgb(var(--ctp-surface1)/0.6)] bg-[rgb(var(--ctp-surface0))] px-2 py-2 text-center text-sm text-[rgb(var(--ctp-text))] focus:border-[rgb(var(--ctp-mauve))] focus:outline-none focus:ring-2 focus:ring-[rgb(var(--ctp-mauve))]"
                         />
-                        <span className="shrink-0 text-xs text-[rgb(var(--ctp-subtext0))]">kg</span>
+                        <span className="shrink-0 text-xs text-[rgb(var(--ctp-subtext0))]">
+                          {t('unitKg')}
+                        </span>
                         <input
                           type="text"
                           inputMode="numeric"
-                          aria-label={t('historyReps')}
+                          aria-label={t(ex.isTimeBased ? 'wtSecondsLabel' : 'historyReps')}
+                          title={t(ex.isTimeBased ? 'wtSecondsLabel' : 'historyReps')}
                           value={set.reps}
                           onChange={(e) =>
                             updateSet(

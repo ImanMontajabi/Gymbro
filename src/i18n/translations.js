@@ -95,6 +95,15 @@ export const translations = {
   historyNoHistory: { fa: 'هنوز تمرینی به پایان نرسانده‌اید', en: "You haven't finished a workout yet", ar: 'لم تُنهِ أي تمرين بعد' },
   historyEdit: { fa: 'ویرایش', en: 'Edit', ar: 'تعديل' },
   historyEditTitle: { fa: 'ویرایش تمرین', en: 'Edit Workout', ar: 'تعديل التمرين' },
+  historyDelete: { fa: 'حذف', en: 'Delete', ar: 'حذف' },
+  // {name} is replaced with the routine name by the caller (HistoryTab).
+  historyDeleteConfirmTemplate: {
+    fa: 'تمرین «{name}» برای همیشه از تاریخچه حذف شود؟',
+    en: 'Permanently delete "{name}" from your history?',
+    ar: 'هل تريد حذف تمرين «{name}» من السجل نهائياً؟',
+  },
+  historyDeleteSuccess: { fa: 'تمرین حذف شد', en: 'Workout deleted', ar: 'تم حذف التمرين' },
+  historyDeleteFailed: { fa: 'حذف تمرین ناموفق بود', en: 'Delete failed', ar: 'فشل حذف التمرين' },
   historyDeleteSet: { fa: 'حذف ست', en: 'Delete set', ar: 'حذف المجموعة' },
   historyWeight: { fa: 'وزنه (kg)', en: 'Weight (kg)', ar: 'الوزن (كجم)' },
   historyReps: { fa: 'تکرار', en: 'Reps', ar: 'التكرارات' },
@@ -121,12 +130,27 @@ export const translations = {
   // --- Workout tab (active workout view + its NameEditRow/ExerciseEditRow
   // subcomponents) -------------------------------------------------------------
   wtDragSet: { fa: 'جابجایی ست', en: 'Move set', ar: 'نقل المجموعة' },
-  // {n}/{weight}/{reps} are replaced by the caller. "kg" is left as a literal
-  // unit abbreviation in every language, matching HistorySessionEditModal.
+  // {n}/{weight}/{reps} are replaced by the caller — see formatSetLine in
+  // utils/sets.js. {weight} and {reps} arrive with their unit already
+  // attached (via unitKg/unitReps/unitSeconds below), because the unit
+  // varies per set: a 0 weight renders as `bodyweight`, and a time-based
+  // exercise's "reps" are seconds.
   wtSetLineTemplate: {
-    fa: 'ست {n}: {weight} kg × {reps} تکرار',
-    en: 'Set {n}: {weight} kg × {reps} reps',
-    ar: 'المجموعة {n}: {weight} كجم × {reps} تكرار',
+    fa: 'ست {n}: {weight} × {reps}',
+    en: 'Set {n}: {weight} × {reps}',
+    ar: 'المجموعة {n}: {weight} × {reps}',
+  },
+  unitKg: { fa: 'kg', en: 'kg', ar: 'كجم' },
+  unitReps: { fa: 'تکرار', en: 'reps', ar: 'تكرار' },
+  unitSeconds: { fa: 'ثانیه', en: 'sec', ar: 'ثانية' },
+  // Shown in place of "0 kg" for a bodyweight set.
+  bodyweight: { fa: 'وزن بدن', en: 'BW', ar: 'وزن الجسم' },
+  // Input label replacing `historyReps` for a time-based exercise.
+  wtSecondsLabel: { fa: 'ثانیه', en: 'Seconds', ar: 'الثواني' },
+  wtTimeBasedLabel: {
+    fa: 'حرکت زمانی (ثانیه به‌جای تکرار)',
+    en: 'Time-based (seconds instead of reps)',
+    ar: 'تمرين زمني (ثوانٍ بدلاً من التكرارات)',
   },
   wtEditSet: { fa: 'ویرایش ست', en: 'Edit set', ar: 'تعديل المجموعة' },
   wtDeleteSet: { fa: 'حذف ست', en: 'Delete set', ar: 'حذف المجموعة' },

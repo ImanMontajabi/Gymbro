@@ -15,7 +15,10 @@ create table public.routines (
 
 -- ---------------------------------------------------------------------------
 -- Exercises: belong to a routine. rest_time is in seconds and drives the
--- auto rest timer, same as before.
+-- auto rest timer, same as before. is_time_based marks exercises like planks
+-- or hangs whose sets are logged in seconds instead of reps (the `reps`
+-- field of a logged set then holds seconds). Existing databases: run
+-- migrations/2026-09-06_exercises_is_time_based.sql instead of this block.
 -- ---------------------------------------------------------------------------
 create table public.exercises (
   id uuid primary key default gen_random_uuid(),
@@ -23,6 +26,7 @@ create table public.exercises (
   user_id uuid not null references auth.users (id) on delete cascade,
   name text not null,
   rest_time integer not null default 0,
+  is_time_based boolean not null default false,
   created_at timestamptz not null default now()
 );
 

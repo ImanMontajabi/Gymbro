@@ -2,17 +2,30 @@ import { useState } from 'react'
 import { sanitizeNumericInput } from '../utils/numbers'
 import { useLanguage } from '../context/LanguageContext'
 
-// Add/rename form for an exercise: name + rest time (seconds). Used both for
-// "افزودن حرکت" and for the edit action on an existing exercise card.
-export default function ExerciseEditRow({ initialName, initialRestTime, onSave, onCancel }) {
+// Add/rename form for an exercise: name + rest time (seconds) + whether the
+// exercise is time-based (sets logged in seconds instead of reps — planks,
+// dead hangs, wall sits). Used both for "افزودن حرکت" and for the edit
+// action on an existing exercise card.
+export default function ExerciseEditRow({
+  initialName,
+  initialRestTime,
+  initialIsTimeBased = false,
+  onSave,
+  onCancel,
+}) {
   const { t } = useLanguage()
   const [name, setName] = useState(initialName)
   const [restTime, setRestTime] = useState(initialRestTime > 0 ? String(initialRestTime) : '')
+  const [isTimeBased, setIsTimeBased] = useState(initialIsTimeBased)
 
   function save() {
     const trimmedName = name.trim()
     if (!trimmedName) return
-    onSave({ name: trimmedName, restTime: Number(restTime) > 0 ? Number(restTime) : 0 })
+    onSave({
+      name: trimmedName,
+      restTime: Number(restTime) > 0 ? Number(restTime) : 0,
+      isTimeBased,
+    })
   }
 
   return (
@@ -38,6 +51,18 @@ export default function ExerciseEditRow({ initialName, initialRestTime, onSave, 
           className="rounded-lg border border-[rgb(var(--ctp-surface1)/0.6)] bg-[rgb(var(--ctp-mantle))] px-3 py-3.5 text-base text-[rgb(var(--ctp-text))] focus:outline-none focus:ring-2 focus:ring-[rgb(var(--ctp-mauve))]"
         />
       </div>
+      {/* A native checkbox (not a custom switch) so it's keyboard/screen-
+          reader accessible for free; `accent-color` keeps it on-theme. The
+          whole row is the label, so the tap target isn't just the 16px box. */}
+      <label className="flex cursor-pointer items-center gap-3 rounded-lg border border-[rgb(var(--ctp-surface1)/0.6)] bg-[rgb(var(--ctp-mantle))] px-3 py-3 text-sm text-[rgb(var(--ctp-text))] transition-all duration-150 ease-out active:opacity-80">
+        <input
+          type="checkbox"
+          checked={isTimeBased}
+          onChange={(e) => setIsTimeBased(e.target.checked)}
+          className="h-5 w-5 shrink-0 rounded accent-[rgb(var(--ctp-mauve))]"
+        />
+        <span>{t('wtTimeBasedLabel')}</span>
+      </label>
       <div className="flex items-center gap-2">
         <button
           type="button"
