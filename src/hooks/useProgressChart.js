@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { formatShortDate } from '../utils/history'
+import { buildProgressSeries } from '../utils/progress'
 
 // Derives the progress chart's exercise list, selection, and plotted series
 // from the already-fetched `history` array (see useWorkoutData). There's no
@@ -31,23 +31,13 @@ export function useProgressChart(history) {
     }
   }, [exerciseNames, selectedExercise])
 
-  // Max weight lifted per session for the selected exercise, oldest first
-  // (history itself is newest-first) so the chart reads left-to-right.
-  const chartData = useMemo(() => {
-    if (!selectedExercise) return []
-    return history
-      .slice()
-      .reverse()
-      .map((session) => {
-        const ex = session.exercises.find((e) => e.exerciseName === selectedExercise)
-        if (!ex || ex.sets.length === 0) return null
-        return {
-          date: formatShortDate(session.date),
-          maxWeight: Math.max(...ex.sets.map((s) => s.weight)),
-        }
-      })
-      .filter(Boolean)
-  }, [history, selectedExercise])
+  // One point per session for the selected exercise. Which number is
+  // plotted (max kg / max reps / max seconds) depends on the exercise —
+  // see getProgressMetric in utils/progress.js.
+  const { metric, data: chartData } = useMemo(
+    () => (selectedExercise ? buildProgressSeries(history, selectedExercise) : { metric: 'kg', data: [] }),
+    [history, selectedExercise]
+  )
 
-  return { exerciseNames, selectedExercise, setSelectedExercise, chartData }
+  return { exerciseNames, selectedExercise, setSelectedExercise, chartData, chartMetric: metric }
 }

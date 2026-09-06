@@ -3,6 +3,7 @@ import { arrayMove } from '@dnd-kit/sortable'
 import toast from 'react-hot-toast'
 import { supabase } from '../supabase'
 import { findPreviousExercise } from '../utils/history'
+import { useLanguage } from '../context/LanguageContext'
 
 const EMPTY_DRAFT = { weight: '', reps: '', note: '' }
 
@@ -123,6 +124,12 @@ function logSupabaseError(error, message = 'خطایی رخ داد. دوباره
 export function useWorkoutData({ user, timer, onDataCleared, writeMutation }) {
   const userId = user?.id ?? null
 
+  // `t` is read through a ref inside the load effect so a language switch
+  // doesn't count as a dependency change and re-fetch everything.
+  const { t } = useLanguage()
+  const tRef = useRef(t)
+  tRef.current = t
+
   // Read once on mount. Whether the cached session actually belongs to the
   // account that ends up signed in can't be known yet (auth is still
   // resolving on first render), so it's restored optimistically here and
@@ -227,21 +234,30 @@ export function useWorkoutData({ user, timer, onDataCleared, writeMutation }) {
 
       if (cancelled) return
 
-      if (routinesRes.error) console.error(routinesRes.error)
-      if (activeRes.error) console.error(activeRes.error)
-      if (historyRes.error) console.error(historyRes.error)
-
-      setRoutines((routinesRes.data ?? []).map(mapRoutineRow))
-      setHistory((historyRes.data ?? []).map(mapSessionRow))
+      // Each query fails independently (offline, a missing column after a
+      // deploy without its migration, RLS...). A failed one leaves its
+      // state exactly as it was — a fetch error must never look like "you
+      // have no routines" — and a single toast says the sync failed. The
+      // ones that succeeded still apply, so e.g. history can update even
+      // while the routines query is broken.
+      if (!routinesRes.error) setRoutines(routinesRes.data.map(mapRoutineRow))
+      if (!historyRes.error) setHistory(historyRes.data.map(mapSessionRow))
       // The locally cached session wins over the server's: every mutation
       // updates local state before (or, when offline, instead of) reaching
-      // Supabase, so the local copy is never behind — and if this load
-      // failed outright (offline), the server "copy" is just an error. The
-      // server is only consulted when there's nothing cached, e.g. first
-      // run after this deploy, or storage being unavailable.
-      setActiveSession(
-        (current) => current ?? (activeRes.data ? mapSessionRow(activeRes.data) : null)
-      )
+      // Supabase, so the local copy is never behind. The server is only
+      // consulted when there's nothing cached, e.g. first run after this
+      // deploy, or storage being unavailable.
+      if (!activeRes.error) {
+        setActiveSession(
+          (current) => current ?? (activeRes.data ? mapSessionRow(activeRes.data) : null)
+        )
+      }
+
+      const failures = [routinesRes.error, activeRes.error, historyRes.error].filter(Boolean)
+      if (failures.length > 0) {
+        failures.forEach((error) => console.error(error))
+        toast.error(tRef.current('dataLoadFailed'))
+      }
       setDataLoading(false)
     }
 

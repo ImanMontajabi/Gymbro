@@ -7,10 +7,13 @@ import {
   XAxis,
   YAxis,
 } from 'recharts'
+import { useLanguage } from '../context/LanguageContext'
+import { METRIC_CAPTION_KEY, METRIC_UNIT_KEY } from '../utils/progress'
 
 // Tooltip styled to match the app's card/toast surfaces via the active
-// Catppuccin flavor rather than a fixed dark palette.
-function ChartTooltip({ active, payload, label }) {
+// Catppuccin flavor rather than a fixed dark palette. `unit` is the
+// already-translated label for whatever the area is plotting.
+function ChartTooltip({ active, payload, label, unit }) {
   if (!active || !payload?.length) return null
   return (
     <div
@@ -18,20 +21,29 @@ function ChartTooltip({ active, payload, label }) {
       className="rounded-lg border border-[rgb(var(--ctp-surface1))] bg-[rgb(var(--ctp-surface0))] px-3 py-2 text-xs text-[rgb(var(--ctp-text))] shadow-lg"
     >
       <p className="mb-1 text-[rgb(var(--ctp-subtext0))]">{label}</p>
-      <p className="font-bold text-[rgb(var(--ctp-mauve))]">{payload[0].value} kg</p>
+      <p className="font-bold text-[rgb(var(--ctp-mauve))]">
+        {payload[0].value} {unit}
+      </p>
     </div>
   )
 }
 
-// "Max weight over time" area chart for one selected exercise, with a
-// dropdown to switch which exercise's history is plotted. Lazy-loaded from
-// App.jsx (recharts is heavy and only needed once the history tab opens).
+// Progress area chart for one selected exercise, with a dropdown to switch
+// which exercise's history is plotted. `chartData` / `chartMetric` come
+// from useProgressChart — the metric decides whether the values are kg,
+// reps (bodyweight exercise) or seconds (time-based exercise). Lazy-loaded
+// from App.jsx (recharts is heavy and only needed once the history tab
+// opens).
 export default function ProgressChart({
   exerciseNames,
   selectedExercise,
   onSelectExercise,
   chartData,
+  chartMetric = 'kg',
 }) {
+  const { t } = useLanguage()
+  const unit = t(METRIC_UNIT_KEY[chartMetric])
+
   return (
     <div className="animate-fade-slide-in rounded-2xl border border-[rgb(var(--ctp-surface1)/0.4)] bg-[rgb(var(--ctp-surface0))] p-4 text-[rgb(var(--ctp-text))] shadow-md shadow-black/10">
       <div className="mb-4 flex items-center justify-between gap-2">
@@ -56,48 +68,53 @@ export default function ProgressChart({
           داده‌ای برای نمایش نمودار موجود نیست
         </p>
       ) : (
-        // Chart internals stay LTR — recharts positions ticks/tooltips by
-        // raw x/y coordinates, so an inherited RTL context would flip them
-        // in confusing ways. Surrounding labels stay RTL Persian.
-        <div dir="ltr" className="h-56 w-full">
-          <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={chartData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-              <defs>
-                <linearGradient id="progressGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="rgb(var(--ctp-mauve))" stopOpacity={0.5} />
-                  <stop offset="100%" stopColor="rgb(var(--ctp-mauve))" stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid
-                strokeDasharray="3 3"
-                stroke="rgb(var(--ctp-surface1))"
-                vertical={false}
-              />
-              <XAxis
-                dataKey="date"
-                tick={{ fontSize: 11, fill: 'rgb(var(--ctp-subtext0))' }}
-                axisLine={false}
-                tickLine={false}
-              />
-              <YAxis
-                tick={{ fontSize: 11, fill: 'rgb(var(--ctp-subtext0))' }}
-                axisLine={false}
-                tickLine={false}
-                width={36}
-              />
-              <Tooltip content={<ChartTooltip />} />
-              <Area
-                type="monotone"
-                dataKey="maxWeight"
-                stroke="rgb(var(--ctp-mauve))"
-                strokeWidth={2.5}
-                fill="url(#progressGradient)"
-                dot={{ r: 3, fill: 'rgb(var(--ctp-mauve))', strokeWidth: 0 }}
-                activeDot={{ r: 5 }}
-              />
-            </AreaChart>
-          </ResponsiveContainer>
-        </div>
+        <>
+          <p className="mb-2 text-xs text-[rgb(var(--ctp-subtext0))]">
+            {t(METRIC_CAPTION_KEY[chartMetric])}
+          </p>
+          {/* Chart internals stay LTR — recharts positions ticks/tooltips by
+              raw x/y coordinates, so an inherited RTL context would flip them
+              in confusing ways. Surrounding labels stay RTL Persian. */}
+          <div dir="ltr" className="h-56 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={chartData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="progressGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="rgb(var(--ctp-mauve))" stopOpacity={0.5} />
+                    <stop offset="100%" stopColor="rgb(var(--ctp-mauve))" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  stroke="rgb(var(--ctp-surface1))"
+                  vertical={false}
+                />
+                <XAxis
+                  dataKey="date"
+                  tick={{ fontSize: 11, fill: 'rgb(var(--ctp-subtext0))' }}
+                  axisLine={false}
+                  tickLine={false}
+                />
+                <YAxis
+                  tick={{ fontSize: 11, fill: 'rgb(var(--ctp-subtext0))' }}
+                  axisLine={false}
+                  tickLine={false}
+                  width={36}
+                />
+                <Tooltip content={<ChartTooltip unit={unit} />} />
+                <Area
+                  type="monotone"
+                  dataKey="value"
+                  stroke="rgb(var(--ctp-mauve))"
+                  strokeWidth={2.5}
+                  fill="url(#progressGradient)"
+                  dot={{ r: 3, fill: 'rgb(var(--ctp-mauve))', strokeWidth: 0 }}
+                  activeDot={{ r: 5 }}
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </>
       )}
     </div>
   )

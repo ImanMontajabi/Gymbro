@@ -145,6 +145,18 @@ export const translations = {
   unitSeconds: { fa: 'ثانیه', en: 'sec', ar: 'ثانية' },
   // Shown in place of "0 kg" for a bodyweight set.
   bodyweight: { fa: 'وزن بدن', en: 'BW', ar: 'وزن الجسم' },
+  // Progress chart captions — which number the line is plotting, see
+  // getProgressMetric in utils/progress.js.
+  chartMetricKg: { fa: 'حداکثر وزنه (kg)', en: 'Max weight (kg)', ar: 'أقصى وزن (كجم)' },
+  chartMetricReps: { fa: 'حداکثر تکرار (وزن بدن)', en: 'Max reps (bodyweight)', ar: 'أقصى تكرار (وزن الجسم)' },
+  chartMetricSeconds: { fa: 'حداکثر زمان (ثانیه)', en: 'Max time (seconds)', ar: 'أقصى وقت (ثانية)' },
+  // Initial load / refresh from Supabase failed — the previously loaded data
+  // (if any) is kept on screen instead of being wiped.
+  dataLoadFailed: {
+    fa: 'همگام‌سازی با سرور ناموفق بود. اطلاعات قبلی نمایش داده می‌شود',
+    en: 'Sync with the server failed. Showing previously loaded data',
+    ar: 'فشلت المزامنة مع الخادم. يتم عرض البيانات المحمّلة سابقاً',
+  },
   // Input label replacing `historyReps` for a time-based exercise.
   wtSecondsLabel: { fa: 'ثانیه', en: 'Seconds', ar: 'الثواني' },
   wtTimeBasedLabel: {

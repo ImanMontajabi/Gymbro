@@ -64,7 +64,8 @@ export default function HistoryTab({
   // format Supabase/filterSessionsByDateRange/formatSessionForAI expect.
   const [startDate, setStartDate] = useState(null)
   const [endDate, setEndDate] = useState(null)
-  const { exerciseNames, selectedExercise, setSelectedExercise, chartData } = progressChart
+  const { exerciseNames, selectedExercise, setSelectedExercise, chartData, chartMetric } =
+    progressChart
   const datePickerConfig = DATE_PICKER_CONFIG[language]
 
   // A DateObject picked under one calendar (e.g. Jalali) isn't valid input
@@ -207,6 +208,7 @@ export default function HistoryTab({
               selectedExercise={selectedExercise}
               onSelectExercise={setSelectedExercise}
               chartData={chartData}
+              chartMetric={chartMetric}
             />
           </Suspense>
 

@@ -106,8 +106,13 @@ export default function HistorySessionEditModal({ session, onClose, onSave }) {
                           }
                           className="w-16 min-w-0 rounded-lg border border-[rgb(var(--ctp-surface1)/0.6)] bg-[rgb(var(--ctp-surface0))] px-2 py-2 text-center text-sm text-[rgb(var(--ctp-text))] focus:border-[rgb(var(--ctp-mauve))] focus:outline-none focus:ring-2 focus:ring-[rgb(var(--ctp-mauve))]"
                         />
+                        {/* A typed 0 is a bodyweight set, so the unit flips
+                            to "BW"; an emptied field keeps "kg" since it's
+                            not a value yet. */}
                         <span className="shrink-0 text-xs text-[rgb(var(--ctp-subtext0))]">
-                          {t('unitKg')}
+                          {set.weight !== '' && Number(set.weight) === 0
+                            ? t('bodyweight')
+                            : t('unitKg')}
                         </span>
                         <input
                           type="text"
