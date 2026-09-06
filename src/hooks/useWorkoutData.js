@@ -224,7 +224,19 @@ export function useWorkoutData({ user, timer, onDataCleared, writeMutation }) {
           .from('routines')
           .select('id, name, exercises(id, name, rest_time, is_time_based, created_at)')
           .order('created_at'),
-        supabase.from('sessions').select('*').eq('status', 'active').maybeSingle(),
+        // Newest active session, as a 1-row list rather than .maybeSingle():
+        // maybeSingle() throws PGRST116 if more than one row matches, and
+        // duplicate active rows *have* happened (an offline reload followed
+        // by starting a new routine, with the unique index missing). That
+        // error used to be treated as "no active session", which sent the
+        // user back to the routine list to start yet another one — the
+        // duplicates then multiplied on every reload.
+        supabase
+          .from('sessions')
+          .select('*')
+          .eq('status', 'active')
+          .order('date', { ascending: false })
+          .limit(1),
         supabase
           .from('sessions')
           .select('*')
@@ -248,9 +260,8 @@ export function useWorkoutData({ user, timer, onDataCleared, writeMutation }) {
       // consulted when there's nothing cached, e.g. first run after this
       // deploy, or storage being unavailable.
       if (!activeRes.error) {
-        setActiveSession(
-          (current) => current ?? (activeRes.data ? mapSessionRow(activeRes.data) : null)
-        )
+        const serverActive = activeRes.data?.[0]
+        setActiveSession((current) => current ?? (serverActive ? mapSessionRow(serverActive) : null))
       }
 
       const failures = [routinesRes.error, activeRes.error, historyRes.error].filter(Boolean)
