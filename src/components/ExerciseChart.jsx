@@ -28,15 +28,17 @@ function ChartTooltip({ active, payload, label, unit }) {
 // current in-progress one. Lazy-loaded from WorkoutTab.jsx since recharts
 // is heavy and most exercise cards are never expanded.
 export default function ExerciseChart({ exerciseName, history }) {
-  const { t } = useLanguage()
-  const { metric, data: chartData } = buildProgressSeries(history, exerciseName)
+  const { t, language } = useLanguage()
+  // `language` picks the X-axis calendar: Jalali for Persian, Gregorian for
+  // English/Arabic — matching the History tab's date picker.
+  const { metric, data: chartData } = buildProgressSeries(history, exerciseName, language)
   const unit = t(METRIC_UNIT_KEY[metric])
 
   return (
     <div className="animate-fade-slide-in mt-3 rounded-xl border border-[rgb(var(--ctp-surface1)/0.4)] bg-[rgb(var(--ctp-mantle)/0.6)] p-3 shadow-inner">
       {chartData.length === 0 ? (
         <p className="py-6 text-center text-sm text-[rgb(var(--ctp-subtext0))]">
-          هنوز داده‌ی کافی برای این حرکت ثبت نشده
+          {t('chartNoExerciseData')}
         </p>
       ) : (
         <>

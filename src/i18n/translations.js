@@ -150,6 +150,19 @@ export const translations = {
   chartMetricKg: { fa: 'حداکثر وزنه (kg)', en: 'Max weight (kg)', ar: 'أقصى وزن (كجم)' },
   chartMetricReps: { fa: 'حداکثر تکرار (وزن بدن)', en: 'Max reps (bodyweight)', ar: 'أقصى تكرار (وزن الجسم)' },
   chartMetricSeconds: { fa: 'حداکثر زمان (ثانیه)', en: 'Max time (seconds)', ar: 'أقصى وقت (ثانية)' },
+  chartProgressTitle: { fa: 'روند پیشرفت', en: 'Progress Trend', ar: 'مسار التقدم' },
+  // History tab chart: nothing logged at all yet.
+  chartNoData: {
+    fa: 'داده‌ای برای نمایش نمودار موجود نیست',
+    en: 'No data to chart yet',
+    ar: 'لا توجد بيانات لعرض المخطط',
+  },
+  // Inline per-exercise chart: this exercise has no completed sessions yet.
+  chartNoExerciseData: {
+    fa: 'هنوز داده‌ی کافی برای این حرکت ثبت نشده',
+    en: 'Not enough data logged for this exercise yet',
+    ar: 'لم يتم تسجيل بيانات كافية لهذا التمرين بعد',
+  },
   // Initial load / refresh from Supabase failed — the previously loaded data
   // (if any) is kept on screen instead of being wiped.
   dataLoadFailed: {

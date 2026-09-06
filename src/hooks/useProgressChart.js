@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { buildProgressSeries } from '../utils/progress'
+import { useLanguage } from '../context/LanguageContext'
 
 // Derives the progress chart's exercise list, selection, and plotted series
 // from the already-fetched `history` array (see useWorkoutData). There's no
@@ -8,6 +9,9 @@ import { buildProgressSeries } from '../utils/progress'
 // tab's own state (which exercise is selected) and the memoized derivation
 // of chart data from it.
 export function useProgressChart(history) {
+  // Only used for the X-axis date labels: Jalali calendar for Persian,
+  // Gregorian for English/Arabic (see formatShortDate).
+  const { language } = useLanguage()
   const [selectedExercise, setSelectedExercise] = useState('')
 
   // Every exercise name that appears in completed history, for the chart's
@@ -35,8 +39,11 @@ export function useProgressChart(history) {
   // plotted (max kg / max reps / max seconds) depends on the exercise —
   // see getProgressMetric in utils/progress.js.
   const { metric, data: chartData } = useMemo(
-    () => (selectedExercise ? buildProgressSeries(history, selectedExercise) : { metric: 'kg', data: [] }),
-    [history, selectedExercise]
+    () =>
+      selectedExercise
+        ? buildProgressSeries(history, selectedExercise, language)
+        : { metric: 'kg', data: [] },
+    [history, selectedExercise, language]
   )
 
   return { exerciseNames, selectedExercise, setSelectedExercise, chartData, chartMetric: metric }

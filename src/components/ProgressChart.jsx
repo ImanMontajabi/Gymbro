@@ -47,7 +47,7 @@ export default function ProgressChart({
   return (
     <div className="animate-fade-slide-in rounded-2xl border border-[rgb(var(--ctp-surface1)/0.4)] bg-[rgb(var(--ctp-surface0))] p-4 text-[rgb(var(--ctp-text))] shadow-md shadow-black/10">
       <div className="mb-4 flex items-center justify-between gap-2">
-        <h2 className="text-lg font-bold">روند پیشرفت</h2>
+        <h2 className="text-lg font-bold">{t('chartProgressTitle')}</h2>
         {exerciseNames.length > 0 && (
           <select
             value={selectedExercise}
@@ -65,7 +65,7 @@ export default function ProgressChart({
 
       {chartData.length === 0 ? (
         <p className="py-10 text-center text-sm text-[rgb(var(--ctp-subtext0))]">
-          داده‌ای برای نمایش نمودار موجود نیست
+          {t('chartNoData')}
         </p>
       ) : (
         <>
