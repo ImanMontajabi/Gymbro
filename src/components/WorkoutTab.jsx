@@ -179,6 +179,7 @@ export default function WorkoutTab({
     handleEditSet,
     handleReorderSets,
     handleFinishWorkout,
+    handleCancelWorkout,
     handleClearAllData,
   } = workout
 
@@ -574,26 +575,16 @@ export default function WorkoutTab({
                   </button>
                 </form>
 
+                {/* Rest countdown. Dismisses itself at 00:00 (see useRestTimer),
+                    which is also what adds a timer icon to the tally below. */}
                 {timer.activeTimer?.exerciseId === ex.exerciseId && (
-                  <div
-                    className={`animate-fade-slide-in mt-3 rounded-xl border p-3 shadow-inner transition-colors duration-300 ${
-                      timer.isOverdue
-                        ? 'border-[rgb(var(--ctp-red)/0.5)] bg-[rgb(var(--ctp-red)/0.1)]'
-                        : 'border-[rgb(var(--ctp-surface1)/0.4)] bg-[rgb(var(--ctp-mantle))]'
-                    }`}
-                  >
+                  <div className="animate-fade-slide-in mt-3 rounded-xl border border-[rgb(var(--ctp-surface1)/0.4)] bg-[rgb(var(--ctp-mantle))] p-3 shadow-inner">
                     <div className="mb-2 flex items-center justify-between gap-2">
                       <span className="text-sm font-bold text-[rgb(var(--ctp-text))]">
-                        {timer.isOverdue ? t('wtTimeUp') : t('wtResting')}
+                        {t('wtResting')}
                       </span>
                       <div className="flex items-center gap-2">
-                        <span
-                          className={`font-mono text-lg font-bold tabular-nums ${
-                            timer.isOverdue
-                              ? 'animate-pulse text-[rgb(var(--ctp-red))]'
-                              : 'text-[rgb(var(--ctp-mauve))]'
-                          }`}
-                        >
+                        <span className="font-mono text-lg font-bold tabular-nums text-[rgb(var(--ctp-mauve))]">
                           {formatTime(timer.remaining)}
                         </span>
                         <button
@@ -608,9 +599,7 @@ export default function WorkoutTab({
                     </div>
                     <div className="h-2 w-full overflow-hidden rounded-full bg-[rgb(var(--ctp-surface1))]">
                       <div
-                        className={`h-full rounded-full transition-[width] duration-300 ease-linear ${
-                          timer.isOverdue ? 'bg-[rgb(var(--ctp-red))]' : 'bg-[rgb(var(--ctp-mauve))]'
-                        }`}
+                        className="h-full rounded-full bg-[rgb(var(--ctp-mauve))] transition-[width] duration-300 ease-linear"
                         style={{
                           width: `${Math.max(0, Math.min(100, (timer.remaining / timer.activeTimer.duration) * 100))}%`,
                         }}
@@ -648,6 +637,27 @@ export default function WorkoutTab({
                     </SortableContext>
                   </DndContext>
                 )}
+
+                {/* Rest tally: one timer icon per rest that ran to 00:00 for
+                    this exercise. Older sessions (pre-tally) have no
+                    completedRests, hence the ?? 0. */}
+                {(ex.completedRests ?? 0) > 0 && (
+                  <div
+                    role="img"
+                    aria-label={t('wtRestTallyTemplate').replace('{n}', ex.completedRests)}
+                    title={t('wtRestTallyTemplate').replace('{n}', ex.completedRests)}
+                    className="mt-3 flex flex-wrap items-center gap-1.5 border-t border-[rgb(var(--ctp-surface1)/0.4)] pt-3"
+                  >
+                    {Array.from({ length: ex.completedRests }, (_, i) => (
+                      <img
+                        key={i}
+                        src="/timer.png"
+                        alt=""
+                        className="animate-fade-slide-in h-5 w-5 object-contain"
+                      />
+                    ))}
+                  </div>
+                )}
               </div>
             )
           })}
@@ -673,27 +683,40 @@ export default function WorkoutTab({
           )}
         </div>
 
-        <button
-          type="button"
-          onPointerDown={startEndHold}
-          onPointerUp={cancelEndHold}
-          onPointerLeave={cancelEndHold}
-          onPointerCancel={cancelEndHold}
-          onContextMenu={(e) => e.preventDefault()}
-          className="relative mt-6 touch-none select-none overflow-hidden rounded-xl border-2 border-[rgb(var(--ctp-red))] py-4 text-lg font-bold text-[rgb(var(--ctp-red))] transition-transform duration-150 ease-out active:scale-[0.98]"
-        >
-          <span
-            aria-hidden="true"
-            className="absolute inset-y-0 start-0 bg-[rgb(var(--ctp-red)/0.25)]"
-            style={{
-              width: isHoldingEnd ? '100%' : '0%',
-              transition: `width ${isHoldingEnd ? END_WORKOUT_HOLD_MS : 150}ms ${isHoldingEnd ? 'linear' : 'ease-out'}`,
-            }}
-          />
-          <span className="relative">
-            {isHoldingEnd ? t('wtHolding') : t('wtHoldToEnd')}
-          </span>
-        </button>
+        <div className="mt-6 flex items-stretch gap-3">
+          <button
+            type="button"
+            onPointerDown={startEndHold}
+            onPointerUp={cancelEndHold}
+            onPointerLeave={cancelEndHold}
+            onPointerCancel={cancelEndHold}
+            onContextMenu={(e) => e.preventDefault()}
+            className="relative min-w-0 flex-1 touch-none select-none overflow-hidden rounded-xl border-2 border-[rgb(var(--ctp-red))] py-4 text-lg font-bold text-[rgb(var(--ctp-red))] transition-transform duration-150 ease-out active:scale-[0.98]"
+          >
+            <span
+              aria-hidden="true"
+              className="absolute inset-y-0 start-0 bg-[rgb(var(--ctp-red)/0.25)]"
+              style={{
+                width: isHoldingEnd ? '100%' : '0%',
+                transition: `width ${isHoldingEnd ? END_WORKOUT_HOLD_MS : 150}ms ${isHoldingEnd ? 'linear' : 'ease-out'}`,
+              }}
+            />
+            <span className="relative">
+              {isHoldingEnd ? t('wtHolding') : t('wtHoldToEnd')}
+            </span>
+          </button>
+          {/* Discard without saving. Muted warning colour so it reads as
+              secondary next to the red "finish" — the hook confirms first
+              whenever any set has been logged. */}
+          <button
+            type="button"
+            onClick={handleCancelWorkout}
+            className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-xl border-2 border-[rgb(var(--ctp-yellow)/0.6)] px-4 text-base font-bold text-[rgb(var(--ctp-yellow))] transition-all duration-150 ease-out hover:bg-[rgb(var(--ctp-yellow)/0.1)] active:scale-[0.98] active:opacity-80"
+          >
+            <Icon name="close" className="text-[18px]" />
+            {t('wtCancelWorkout')}
+          </button>
+        </div>
       </div>
       {bottomTabBar}
     </div>

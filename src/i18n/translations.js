@@ -203,8 +203,15 @@ export const translations = {
   },
   wtSubmittingSet: { fa: 'در حال ثبت...', en: 'Logging...', ar: 'جارٍ التسجيل...' },
   wtSubmitSet: { fa: 'ثبت ست', en: 'Log Set', ar: 'تسجيل المجموعة' },
-  wtTimeUp: { fa: 'زمان تمام شد', en: 'Time Exceeded', ar: 'انتهى الوقت' },
   wtResting: { fa: 'استراحت', en: 'Resting', ar: 'استراحة' },
+  // Toast shown by useRestTimer when the countdown auto-dismisses at 00:00.
+  wtRestFinished: { fa: 'زمان استراحت تمام شد', en: 'Rest is over', ar: 'انتهى وقت الراحة' },
+  // Rest tally under an exercise card — one timer icon per completed rest.
+  wtRestTallyTemplate: {
+    fa: '{n} استراحت کامل شده',
+    en: '{n} rest(s) completed',
+    ar: '{n} فترة راحة مكتملة',
+  },
   // Distinct from the generic `cancel` key ("انصراف") — kept as its own key
   // so extracting these strings doesn't silently change the exact Persian
   // wording ("لغو") already shown in NameEditRow, ExerciseEditRow, and the
@@ -217,6 +224,14 @@ export const translations = {
     ar: 'المس واستمر لإنهاء التمرين',
   },
   wtHolding: { fa: 'نگه دارید...', en: 'Keep holding...', ar: 'استمر بالضغط...' },
+  // Cancel (discard) workout — the confirm only appears once a set exists.
+  wtCancelWorkout: { fa: 'انصراف', en: 'Cancel', ar: 'إلغاء' },
+  wtCancelWorkoutConfirm: {
+    fa: 'تمرین لغو شود؟ ست‌های ثبت‌شده در این جلسه ذخیره نمی‌شوند.',
+    en: 'Cancel this workout? The sets logged in this session will not be saved.',
+    ar: 'هل تريد إلغاء التمرين؟ لن يتم حفظ المجموعات المسجلة في هذه الجلسة.',
+  },
+  wtCancelWorkoutDone: { fa: 'تمرین لغو شد', en: 'Workout discarded', ar: 'تم إلغاء التمرين' },
   wtExerciseNamePlaceholder: { fa: 'نام حرکت', en: 'Exercise name', ar: 'اسم التمرين' },
   wtRestTimeLabel: { fa: 'زمان استراحت (ثانیه)', en: 'Rest time (seconds)', ar: 'وقت الراحة (ثانية)' },
   wtRestTimePlaceholder: { fa: '۹۰', en: '90', ar: '٩٠' },

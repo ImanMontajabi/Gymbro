@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import toast from 'react-hot-toast'
+import { useLanguage } from '../context/LanguageContext'
 
 // Rest timer — a single active timer at a time, tied to whichever exercise
 // it belongs to. Logging any set overwrites it (per spec: "restarting a
@@ -17,27 +18,41 @@ import toast from 'react-hot-toast'
 // (`visibilitychange`), so unlocking the phone immediately shows the
 // correct state instead of waiting for the next tick.
 //
-// The timer does not auto-clear at zero — it keeps counting into negative
-// "overtime" so a user who was mid-set when it hit zero, or whose phone
-// was locked past it, sees exactly how far over they are, rather than the
-// timer just vanishing.
+// Reaching zero auto-dismisses the timer (no manual cancel needed) and
+// publishes a `lastCompleted` event. useWorkoutData listens to that event
+// and bumps the exercise's `completedRests` tally — the timer itself knows
+// nothing about sessions, which keeps it reusable and keeps the session
+// snapshot the single place that owns per-exercise data.
 export function useRestTimer() {
+  const { t } = useLanguage()
+  const tRef = useRef(t)
+  tRef.current = t
+
   const [activeTimer, setActiveTimer] = useState(null) // { exerciseId, duration, targetTime }
-  const [remaining, setRemaining] = useState(0) // seconds; <= 0 once expired
-  const notifiedRef = useRef(false)
+  const [remaining, setRemaining] = useState(0) // seconds
+  // { exerciseId, at } for the most recent rest that ran all the way down.
+  // `at` makes every completion a fresh object, so two back-to-back rests
+  // for the same exercise both trigger the listener's effect.
+  const [lastCompleted, setLastCompleted] = useState(null)
 
   useEffect(() => {
     if (!activeTimer) return
 
     function sync() {
       const secondsLeft = Math.ceil((activeTimer.targetTime - Date.now()) / 1000)
-      setRemaining(secondsLeft)
-      if (secondsLeft <= 0 && !notifiedRef.current) {
-        notifiedRef.current = true
-        toast('زمان استراحت تمام شد', {
-          icon: <img src="/timer.png" alt="" className="h-5 w-5 object-contain" />,
-        })
+      if (secondsLeft > 0) {
+        setRemaining(secondsLeft)
+        return
       }
+      // Done: dismiss, notify, and record the completion exactly once. The
+      // effect cleanup below tears down the interval as soon as
+      // activeTimer becomes null, so this branch can't re-fire.
+      setActiveTimer(null)
+      setRemaining(0)
+      setLastCompleted({ exerciseId: activeTimer.exerciseId, at: Date.now() })
+      toast(tRef.current('wtRestFinished'), {
+        icon: <img src="/timer.png" alt="" className="h-5 w-5 object-contain" />,
+      })
     }
 
     sync()
@@ -55,10 +70,11 @@ export function useRestTimer() {
   }, [activeTimer])
 
   function startTimer(exerciseId, duration) {
-    notifiedRef.current = false
     setActiveTimer({ exerciseId, duration, targetTime: Date.now() + duration * 1000 })
   }
 
+  // Manual cancel (or session end): the rest did not run its course, so
+  // no completion event is published and no tally is added.
   function cancelTimer() {
     setActiveTimer(null)
     setRemaining(0)
@@ -77,7 +93,7 @@ export function useRestTimer() {
   return {
     activeTimer,
     remaining,
-    isOverdue: !!activeTimer && remaining <= 0,
+    lastCompleted,
     startTimer,
     cancelTimer,
     cancelIfMatches,

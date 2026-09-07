@@ -355,6 +355,7 @@ export function useWorkoutData({ user, timer, onDataCleared, writeMutation }) {
       exerciseName: ex.name,
       restTime: ex.restTime || 0,
       isTimeBased: !!ex.isTimeBased,
+      completedRests: 0,
       sets: [],
     }))
 
@@ -391,7 +392,14 @@ export function useWorkoutData({ user, timer, onDataCleared, writeMutation }) {
 
     const updatedExercises = [
       ...activeSession.exercises,
-      { exerciseId: newExercise.id, exerciseName: name, restTime, isTimeBased, sets: [] },
+      {
+        exerciseId: newExercise.id,
+        exerciseName: name,
+        restTime,
+        isTimeBased,
+        completedRests: 0,
+        sets: [],
+      },
     ]
     setActiveSession({ ...activeSession, exercises: updatedExercises })
     setIsAddingExercise(false)
@@ -615,6 +623,71 @@ export function useWorkoutData({ user, timer, onDataCleared, writeMutation }) {
     }).then(({ error }) => logSupabaseError(error))
   }
 
+  // --- Rest tally -------------------------------------------------------
+  //
+  // Every rest that counts all the way down bumps that exercise's
+  // `completedRests` in the session snapshot (rendered as a row of timer
+  // icons under the exercise). The timer publishes `lastCompleted` when it
+  // auto-dismisses at 00:00; a manual cancel publishes nothing, so an
+  // interrupted rest never counts. Keyed on the exercise the timer was
+  // started for — not `activeExerciseId` — because the user may have
+  // expanded a different card while resting.
+  //
+  // Only `timer.lastCompleted` is a dependency on purpose: the effect must
+  // run once per completion, not whenever the session changes. It reads
+  // the session from the render in which the completion arrived, and the
+  // ref guards against StrictMode's double effect run in development.
+  const lastHandledRestRef = useRef(null)
+  useEffect(() => {
+    const completed = timer.lastCompleted
+    if (!completed || completed === lastHandledRestRef.current) return
+    lastHandledRestRef.current = completed
+
+    // The session may have ended, or the exercise been deleted, while the
+    // rest was still counting — nothing to tally then.
+    if (!activeSession) return
+    if (!activeSession.exercises.some((ex) => ex.exerciseId === completed.exerciseId)) return
+
+    const updatedExercises = activeSession.exercises.map((ex) =>
+      ex.exerciseId === completed.exerciseId
+        ? { ...ex, completedRests: (ex.completedRests ?? 0) + 1 }
+        : ex
+    )
+    setActiveSession({ ...activeSession, exercises: updatedExercises })
+
+    writeMutation({
+      table: 'sessions',
+      type: 'update',
+      payload: { exercises: updatedExercises },
+      match: { column: 'id', value: activeSession.id },
+    }).then(({ error }) => logSupabaseError(error))
+  }, [timer.lastCompleted])
+
+  // Discards the in-progress session without saving anything to history.
+  // Silent when nothing was logged (the row is just deleted, like an
+  // empty "finish"); asks first when at least one set exists. Setting
+  // activeSession to null also clears the crash-recovery cache in
+  // localStorage via the persistence effect above.
+  function handleCancelWorkout() {
+    if (!activeSession) return
+    const loggedSets = activeSession.exercises.reduce((sum, ex) => sum + ex.sets.length, 0)
+    if (loggedSets > 0 && !window.confirm(tRef.current('wtCancelWorkoutConfirm'))) return
+
+    writeMutation({
+      table: 'sessions',
+      type: 'delete',
+      match: { column: 'id', value: activeSession.id },
+    }).then(({ error }) => logSupabaseError(error))
+
+    setActiveSession(null)
+    setDrafts({})
+    setActiveExerciseId(null)
+    setIsAddingExercise(false)
+    setEditingExerciseId(null)
+    timer.cancelTimer()
+    if (loggedSets > 0) toast(tRef.current('wtCancelWorkoutDone'))
+  }
+
   function handleFinishWorkout() {
     const loggedExercises = activeSession.exercises.filter((ex) => ex.sets.length > 0)
     const sessionId = activeSession.id
@@ -768,6 +841,7 @@ export function useWorkoutData({ user, timer, onDataCleared, writeMutation }) {
     handleEditSet,
     handleReorderSets,
     handleFinishWorkout,
+    handleCancelWorkout,
     handleClearAllData,
     handleUpdateHistorySession,
     handleDeleteHistorySession,
