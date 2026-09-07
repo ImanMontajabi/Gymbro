@@ -43,10 +43,19 @@ async function runSupabaseMutation({ table, type, payload, match }) {
 // server: the "zombie workout" that came back on every app boot. Finish/
 // cancel now purge their own session's writes, but this guard also covers
 // queues that were filled before that fix.
+//
+// Second test: no workout is still in progress six hours after it started,
+// so an 'active' insert with an older `date` is a replay whatever the cache
+// says. The same rule is enforced server-side by the
+// sessions_reject_stale_active trigger, which also covers other devices.
+const MAX_ACTIVE_SESSION_AGE_MS = 6 * 60 * 60 * 1000
+
 function isStaleActiveSessionInsert(mutation) {
   if (mutation.table !== 'sessions' || mutation.type !== 'insert') return false
   if (mutation.payload?.status !== 'active') return false
-  return mutation.payload?.id !== loadStoredWorkout()?.activeSession?.id
+  if (mutation.payload?.id !== loadStoredWorkout()?.activeSession?.id) return true
+  const startedAt = Date.parse(mutation.payload?.date)
+  return Number.isNaN(startedAt) || Date.now() - startedAt > MAX_ACTIVE_SESSION_AGE_MS
 }
 
 // Offline-first write queue: `writeMutation` tries the Supabase call
