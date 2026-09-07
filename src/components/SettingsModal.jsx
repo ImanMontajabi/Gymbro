@@ -64,7 +64,7 @@ export default function SettingsModal({ onClose, onClearData, onLogout, userEmai
 
         <SocialFooter />
         <p dir="ltr" className="mt-2 text-center text-[10px] text-[rgb(var(--ctp-subtext0)/0.7)]">
-          build {__GYMBRO_BUILD__}
+          v{__GYMBRO_VERSION__} · build {__GYMBRO_BUILD__}
         </p>
       </div>
     </div>

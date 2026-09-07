@@ -6,6 +6,7 @@ import Icon from './Icon'
 import NameEditRow from './NameEditRow'
 import ExerciseEditRow from './ExerciseEditRow'
 import HeaderActions from './HeaderActions'
+import VersionBadge from './VersionBadge'
 import SettingsModal from './SettingsModal'
 import BottomTabBar from './BottomTabBar'
 import { useLanguage } from '../context/LanguageContext'
@@ -228,6 +229,7 @@ export default function WorkoutTab({
                 className="h-8 w-8 rounded-xl object-contain shadow-sm"
               />
               <h1 className="text-2xl font-bold">{t('common')}</h1>
+              <VersionBadge className="mt-1" />
             </div>
             {headerActions}
           </header>
