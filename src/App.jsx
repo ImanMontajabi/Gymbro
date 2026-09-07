@@ -120,13 +120,15 @@ function App() {
   const { authSession, user, logout } = useAuth()
 
   const isOnline = useNetworkStatus()
-  const { writeMutation } = useMutationQueue()
+  const { writeMutation, dropQueuedSessionMutations, clearQueue } = useMutationQueue()
 
   const timer = useRestTimer()
   const workout = useWorkoutData({
     user,
     timer,
     writeMutation,
+    dropQueuedSessionMutations,
+    clearQueue,
   })
   const aiCoach = useAiCoach()
 

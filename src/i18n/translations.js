@@ -232,6 +232,26 @@ export const translations = {
     ar: 'هل تريد إلغاء التمرين؟ لن يتم حفظ المجموعات المسجلة في هذه الجلسة.',
   },
   wtCancelWorkoutDone: { fa: 'تمرین لغو شد', en: 'Workout discarded', ar: 'تم إلغاء التمرين' },
+  // Starting a routine: the server rejected the new session (see the
+  // rollback in handleStartRoutine).
+  wtStartFailed: {
+    fa: 'شروع تمرین ناموفق بود. دوباره تلاش کنید',
+    en: 'Could not start the workout. Please try again',
+    ar: 'تعذّر بدء التمرين. حاول مرة أخرى',
+  },
+  // A forgotten active session with logged sets was found on the server
+  // and moved to history (see closeStaleServerSession).
+  wtStaleSessionSaved: {
+    fa: 'یک تمرین ناتمام پیدا شد و در تاریخچه ذخیره شد',
+    en: 'An unfinished workout was found and saved to history',
+    ar: 'تم العثور على تمرين غير مكتمل وحفظه في السجل',
+  },
+  // Multi-device: the server's live workout replaced what this device had.
+  wtResumedFromServer: {
+    fa: 'تمرین در حال انجام از دستگاه دیگر ادامه داده شد',
+    en: 'Resumed the workout in progress from another device',
+    ar: 'تمت متابعة التمرين الجاري من جهاز آخر',
+  },
   wtExerciseNamePlaceholder: { fa: 'نام حرکت', en: 'Exercise name', ar: 'اسم التمرين' },
   wtRestTimeLabel: { fa: 'زمان استراحت (ثانیه)', en: 'Rest time (seconds)', ar: 'وقت الراحة (ثانية)' },
   wtRestTimePlaceholder: { fa: '۹۰', en: '90', ar: '٩٠' },

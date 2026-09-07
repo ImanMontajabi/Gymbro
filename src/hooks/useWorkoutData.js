@@ -4,6 +4,7 @@ import toast from 'react-hot-toast'
 import { supabase } from '../supabase'
 import { findPreviousExercise } from '../utils/history'
 import { useLanguage } from '../context/LanguageContext'
+import { clearStoredWorkout, loadStoredWorkout, saveStoredWorkout } from '../utils/activeWorkoutStorage'
 
 const EMPTY_DRAFT = { weight: '', reps: '', note: '' }
 
@@ -31,49 +32,6 @@ function loadStoredDrafts() {
 // is what the reload restores from. Shape: { userId, activeSession,
 // activeExerciseId } — `userId` so a session cached by one account is never
 // resurrected for a different account signing in on the same device.
-const ACTIVE_WORKOUT_STORAGE_KEY = 'gymbro_active_workout'
-
-function loadStoredWorkout() {
-  try {
-    const raw = localStorage.getItem(ACTIVE_WORKOUT_STORAGE_KEY)
-    if (!raw) return null
-    const parsed = JSON.parse(raw)
-    // Reject anything that isn't the expected shape (corrupt write, an older
-    // deploy's format, hand-edited storage) rather than letting it crash the
-    // workout view on mount.
-    if (
-      !parsed ||
-      typeof parsed !== 'object' ||
-      typeof parsed.userId !== 'string' ||
-      !parsed.activeSession ||
-      typeof parsed.activeSession !== 'object' ||
-      !Array.isArray(parsed.activeSession.exercises)
-    ) {
-      return null
-    }
-    return parsed
-  } catch {
-    return null
-  }
-}
-
-function saveStoredWorkout(data) {
-  try {
-    localStorage.setItem(ACTIVE_WORKOUT_STORAGE_KEY, JSON.stringify(data))
-  } catch {
-    // localStorage unavailable (private mode, quota) — the session still
-    // works for this tab's lifetime, it just won't survive a tab kill.
-  }
-}
-
-function clearStoredWorkout() {
-  try {
-    localStorage.removeItem(ACTIVE_WORKOUT_STORAGE_KEY)
-  } catch {
-    // ignore — same as above
-  }
-}
-
 // Maps a `routines` row (with its nested `exercises` rows, snake_case
 // columns) to the shape the rest of the app works with.
 function mapRoutineRow(row) {
@@ -111,6 +69,67 @@ function logSupabaseError(error, message = 'خطایی رخ داد. دوباره
   }
 }
 
+// Closes an `active` sessions row the server still holds but this device no
+// longer treats as in progress — a finish/cancel whose write never landed.
+// Same rules as handleFinishWorkout: with logged sets it becomes a completed
+// history entry (empty exercises stripped), otherwise it is deleted. Returns
+// `saved` (the history entry) when it was completed, so the caller can add
+// it to local history and tell the user.
+async function closeStaleServerSession(row, writeMutation) {
+  const session = mapSessionRow(row)
+  const loggedExercises = session.exercises.filter((ex) => ex.sets?.length > 0)
+  if (loggedExercises.length === 0) {
+    const { error } = await writeMutation({
+      table: 'sessions',
+      type: 'delete',
+      match: { column: 'id', value: session.id },
+    })
+    return { error, saved: null }
+  }
+  const { error } = await writeMutation({
+    table: 'sessions',
+    type: 'update',
+    payload: { exercises: loggedExercises, status: 'completed' },
+    match: { column: 'id', value: session.id },
+  })
+  return { error, saved: error ? null : { ...session, exercises: loggedExercises } }
+}
+
+// Multi-device conflict: this device's cached session lost to a different
+// active session on the server (see the load effect). The cached copy is
+// never deleted from the server — its row, if it still exists, is a
+// completed workout finished on another device. Its logged sets are only
+// written back, as a completed entry, when the server has no row for it at
+// all (the insert never landed), so nothing another device saved is ever
+// overwritten. Returns `saved` when such an entry was written.
+async function archiveLocalSession(session, userId, writeMutation) {
+  const loggedExercises = session.exercises.filter((ex) => ex.sets?.length > 0)
+  if (loggedExercises.length === 0) return { error: null, saved: null }
+
+  const { data, error: lookupError } = await supabase
+    .from('sessions')
+    .select('id')
+    .eq('id', session.id)
+    .limit(1)
+  if (lookupError) return { error: lookupError, saved: null }
+  if (data?.length > 0) return { error: null, saved: null }
+
+  const { error } = await writeMutation({
+    table: 'sessions',
+    type: 'insert',
+    payload: {
+      id: session.id,
+      user_id: userId,
+      routine_id: session.routineId,
+      routine_name: session.routineName,
+      date: session.date,
+      exercises: loggedExercises,
+      status: 'completed',
+    },
+  })
+  return { error, saved: error ? null : { ...session, exercises: loggedExercises } }
+}
+
 // Owns all Supabase-backed workout state — routines, completed-session
 // history, the in-progress session, and every CRUD action that mutates
 // them.
@@ -121,7 +140,14 @@ function logSupabaseError(error, message = 'خطایی رخ داد. دوباره
 // resets lives in this hook. `writeMutation` (from useMutationQueue) is
 // used for every write below instead of calling `supabase` directly, so
 // each one is automatically queued and replayed later if offline.
-export function useWorkoutData({ user, timer, onDataCleared, writeMutation }) {
+export function useWorkoutData({
+  user,
+  timer,
+  onDataCleared,
+  writeMutation,
+  dropQueuedSessionMutations,
+  clearQueue,
+}) {
   const userId = user?.id ?? null
 
   // `t` is read through a ref inside the load effect so a language switch
@@ -187,6 +213,17 @@ export function useWorkoutData({ user, timer, onDataCleared, writeMutation }) {
   // (via the sync effect above) before auth even had a chance to restore it.
   const hadUserRef = useRef(false)
 
+  // Latest session for async code (the load below) that must not close
+  // over a stale render.
+  const activeSessionRef = useRef(activeSession)
+  activeSessionRef.current = activeSession
+
+  // Id of the session this device most recently finished or cancelled.
+  // Lets handleStartRoutine tell "my own close never reached the server"
+  // (safe to close and retry) apart from "another device has a live
+  // workout" (must be adopted, never closed).
+  const lastClosedSessionIdRef = useRef(null)
+
   // Load everything from Supabase once we know who's signed in.
   //
   // Keyed on `userId`, not the `user` object: supabase auth-js refreshes the
@@ -214,6 +251,7 @@ export function useWorkoutData({ user, timer, onDataCleared, writeMutation }) {
       setActiveSession(null)
       setActiveExerciseId(null)
     }
+    const localActive = restored && restored.userId !== userId ? null : activeSessionRef.current
 
     let cancelled = false
     setDataLoading(true)
@@ -254,14 +292,40 @@ export function useWorkoutData({ user, timer, onDataCleared, writeMutation }) {
       // while the routines query is broken.
       if (!routinesRes.error) setRoutines(routinesRes.data.map(mapRoutineRow))
       if (!historyRes.error) setHistory(historyRes.data.map(mapSessionRow))
-      // The locally cached session wins over the server's: every mutation
-      // updates local state before (or, when offline, instead of) reaching
-      // Supabase, so the local copy is never behind. The server is only
-      // consulted when there's nothing cached, e.g. first run after this
-      // deploy, or storage being unavailable.
+      // Active session — three cases, written for one account on several
+      // devices (the one_active_session_per_user index guarantees the
+      // server holds at most one live workout for the account):
+      //
+      //  1. Nothing cached here: ADOPT the server's session. Setting it as
+      //     activeSession also writes it to localStorage through the
+      //     persistence effect, so the workout continues on this device.
+      //  2. Cached and server agree (same id, or server has none): the
+      //     cached copy wins — every mutation updates local state before
+      //     (or, offline, instead of) reaching Supabase, so it is never
+      //     behind. "Server has none" also covers an insert that never
+      //     landed; finish upserts the full row, so nothing is lost.
+      //  3. Cached and server hold DIFFERENT sessions: the server wins.
+      //     Its session is the live one (started on another device, or on
+      //     this one after the cached copy was already finished elsewhere);
+      //     the cached copy is stale. It is never deleted from the server —
+      //     archiveLocalSession only writes its sets back if the server has
+      //     no row for it at all.
       if (!activeRes.error) {
-        const serverActive = activeRes.data?.[0]
-        setActiveSession((current) => current ?? (serverActive ? mapSessionRow(serverActive) : null))
+        const serverActive = activeRes.data?.[0] ? mapSessionRow(activeRes.data[0]) : null
+        if (!localActive) {
+          setActiveSession((current) => current ?? serverActive)
+        } else if (serverActive && serverActive.id !== localActive.id) {
+          setActiveSession((current) => (current?.id === localActive.id ? serverActive : current))
+          setActiveExerciseId(null)
+          toast(tRef.current('wtResumedFromServer'))
+          archiveLocalSession(localActive, userId, writeMutation).then(({ error, saved }) => {
+            logSupabaseError(error)
+            if (saved) {
+              setHistory((prev) => (prev.some((s) => s.id === saved.id) ? prev : [saved, ...prev]))
+              toast(tRef.current('wtStaleSessionSaved'))
+            }
+          })
+        }
       }
 
       const failures = [routinesRes.error, activeRes.error, historyRes.error].filter(Boolean)
@@ -276,7 +340,7 @@ export function useWorkoutData({ user, timer, onDataCleared, writeMutation }) {
     return () => {
       cancelled = true
     }
-  }, [userId, restored])
+  }, [userId, restored, writeMutation])
 
   const previousRecords = useMemo(() => {
     const map = {}
@@ -347,7 +411,7 @@ export function useWorkoutData({ user, timer, onDataCleared, writeMutation }) {
     })
   }
 
-  function handleStartRoutine(routine) {
+  async function handleStartRoutine(routine) {
     const id = crypto.randomUUID()
     const date = new Date().toISOString()
     const exercises = routine.exercises.map((ex) => ({
@@ -364,7 +428,7 @@ export function useWorkoutData({ user, timer, onDataCleared, writeMutation }) {
     timer.cancelTimer()
     setActiveSession({ id, routineId: routine.id, routineName: routine.name, date, exercises })
 
-    writeMutation({
+    const insert = {
       table: 'sessions',
       type: 'insert',
       payload: {
@@ -376,7 +440,52 @@ export function useWorkoutData({ user, timer, onDataCleared, writeMutation }) {
         date,
         exercises,
       },
-    }).then(({ error }) => logSupabaseError(error))
+    }
+    let { error, queued } = await writeMutation(insert)
+
+    // 23505 = unique_violation on one_active_session_per_user: the server
+    // already holds an active session. Two very different situations:
+    //  - it is the one this device just finished/cancelled and that close
+    //    never landed → close it properly now and retry the insert once;
+    //  - anything else is a live workout from another device → adopt it
+    //    instead of the routine the user tapped. Never close it.
+    // Without this the app used to carry on with a session the server
+    // never accepted — every later write targeted a row that didn't exist,
+    // and the server's session came back on the next load.
+    if (error?.code === '23505') {
+      const { data } = await supabase
+        .from('sessions')
+        .select('*')
+        .eq('status', 'active')
+        .order('date', { ascending: false })
+        .limit(1)
+      const serverRow = data?.[0]
+      if (serverRow && serverRow.id === lastClosedSessionIdRef.current) {
+        const closed = await closeStaleServerSession(serverRow, writeMutation)
+        if (closed.saved) {
+          setHistory((prev) => [closed.saved, ...prev])
+          toast(tRef.current('wtStaleSessionSaved'))
+        }
+        if (!closed.error) ({ error, queued } = await writeMutation(insert))
+      } else if (serverRow && serverRow.id !== id) {
+        const serverActive = mapSessionRow(serverRow)
+        setActiveSession((current) => (current?.id === id ? serverActive : current))
+        setActiveExerciseId(null)
+        toast(tRef.current('wtResumedFromServer'))
+        return
+      }
+    }
+
+    // Roll back rather than keep a session the server rejected: the crash
+    // cache is cleared by the persistence effect, and any set logged in the
+    // few hundred ms before the reply is dropped with it (`current.id`
+    // check so a session started after a slow failure isn't clobbered).
+    if (error && !queued) {
+      console.error(error)
+      setActiveSession((current) => (current?.id === id ? null : current))
+      setActiveExerciseId(null)
+      toast.error(tRef.current('wtStartFailed'))
+    }
   }
 
   // --- Exercise CRUD (inside workout view) ---------------------------------
@@ -633,10 +742,10 @@ export function useWorkoutData({ user, timer, onDataCleared, writeMutation }) {
   // started for — not `activeExerciseId` — because the user may have
   // expanded a different card while resting.
   //
-  // Only `timer.lastCompleted` is a dependency on purpose: the effect must
-  // run once per completion, not whenever the session changes. It reads
-  // the session from the render in which the completion arrived, and the
-  // ref guards against StrictMode's double effect run in development.
+  // Runs once per completion (guarded by the ref against StrictMode's
+  // double effect run in development) and reads the session through
+  // activeSessionRef so the session itself need not be a dependency —
+  // otherwise every set logged would re-run the effect.
   const lastHandledRestRef = useRef(null)
   useEffect(() => {
     const completed = timer.lastCompleted
@@ -645,23 +754,24 @@ export function useWorkoutData({ user, timer, onDataCleared, writeMutation }) {
 
     // The session may have ended, or the exercise been deleted, while the
     // rest was still counting — nothing to tally then.
-    if (!activeSession) return
-    if (!activeSession.exercises.some((ex) => ex.exerciseId === completed.exerciseId)) return
+    const session = activeSessionRef.current
+    if (!session) return
+    if (!session.exercises.some((ex) => ex.exerciseId === completed.exerciseId)) return
 
-    const updatedExercises = activeSession.exercises.map((ex) =>
+    const updatedExercises = session.exercises.map((ex) =>
       ex.exerciseId === completed.exerciseId
         ? { ...ex, completedRests: (ex.completedRests ?? 0) + 1 }
         : ex
     )
-    setActiveSession({ ...activeSession, exercises: updatedExercises })
+    setActiveSession({ ...session, exercises: updatedExercises })
 
     writeMutation({
       table: 'sessions',
       type: 'update',
       payload: { exercises: updatedExercises },
-      match: { column: 'id', value: activeSession.id },
+      match: { column: 'id', value: session.id },
     }).then(({ error }) => logSupabaseError(error))
-  }, [timer.lastCompleted])
+  }, [timer.lastCompleted, writeMutation])
 
   // Discards the in-progress session without saving anything to history.
   // Silent when nothing was logged (the row is just deleted, like an
@@ -672,6 +782,11 @@ export function useWorkoutData({ user, timer, onDataCleared, writeMutation }) {
     if (!activeSession) return
     const loggedSets = activeSession.exercises.reduce((sum, ex) => sum + ex.sets.length, 0)
     if (loggedSets > 0 && !window.confirm(tRef.current('wtCancelWorkoutConfirm'))) return
+    lastClosedSessionIdRef.current = activeSession.id
+    // Anything still queued for this session (an offline insert, set
+    // updates) must never replay — it would recreate the row we are about
+    // to delete on the next app boot.
+    dropQueuedSessionMutations(activeSession.id)
 
     writeMutation({
       table: 'sessions',
@@ -691,14 +806,30 @@ export function useWorkoutData({ user, timer, onDataCleared, writeMutation }) {
   function handleFinishWorkout() {
     const loggedExercises = activeSession.exercises.filter((ex) => ex.sets.length > 0)
     const sessionId = activeSession.id
+    lastClosedSessionIdRef.current = sessionId
+    // The upsert/delete below carries the session's final state, so every
+    // earlier queued write for it is redundant — and a queued *insert* with
+    // status 'active' would resurrect the workout on the next boot.
+    dropQueuedSessionMutations(sessionId)
 
     if (loggedExercises.length > 0) {
       setHistory((prev) => [{ ...activeSession, exercises: loggedExercises }, ...prev])
+      // Upsert of the whole row, not an update by id: if the original
+      // insert was ever lost (offline replay stalled, the 23505 case
+      // above), an update would match zero rows and the finished workout
+      // would exist only in this device's local history.
       writeMutation({
         table: 'sessions',
-        type: 'update',
-        payload: { exercises: loggedExercises, status: 'completed' },
-        match: { column: 'id', value: sessionId },
+        type: 'upsert',
+        payload: {
+          id: sessionId,
+          user_id: user.id,
+          routine_id: activeSession.routineId,
+          routine_name: activeSession.routineName,
+          date: activeSession.date,
+          exercises: loggedExercises,
+          status: 'completed',
+        },
       }).then(({ error, queued }) => {
         logSupabaseError(error)
         if (!error && !queued) toast.success('تمرین ذخیره شد')
@@ -798,6 +929,7 @@ export function useWorkoutData({ user, timer, onDataCleared, writeMutation }) {
     setEditingExerciseId(null)
     setIsAddingExercise(false)
     onDataCleared?.()
+    clearQueue()
 
     Promise.all([
       supabase.from('sessions').delete().eq('user_id', user.id),
