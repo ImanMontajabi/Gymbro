@@ -25,18 +25,4 @@ create trigger sessions_reject_stale_active
   before insert on public.sessions
   for each row execute function public.reject_stale_active_session();
 
--- Diagnostic: how was each recent "Upper B" row born?
---   replay_lag ≈ 0        → a real start (a tap on the routine) at `date`
---   replay_lag of hours+  → the row was inserted long after its start time,
---                            i.e. replayed from an offline queue
-select id,
-       status,
-       date,
-       created_at,
-       created_at - date as replay_lag,
-       (select count(*) from jsonb_array_elements(exercises) ex
-        where jsonb_array_length(coalesce(ex->'sets', '[]'::jsonb)) > 0) as exercises_with_sets
-from public.sessions
-where routine_name = 'Upper B'
-order by created_at desc
-limit 20;
+-- Diagnostics live in 2026-09-07_sessions_created_at.sql.

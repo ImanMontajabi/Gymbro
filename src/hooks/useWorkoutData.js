@@ -269,12 +269,15 @@ export function useWorkoutData({
         // error used to be treated as "no active session", which sent the
         // user back to the routine list to start yet another one — the
         // duplicates then multiplied on every reload.
+        // A few rows, not one: more than one can only exist if the
+        // one_active_session_per_user index is missing on the server, and
+        // the extras are closed below rather than surfacing one per boot.
         supabase
           .from('sessions')
           .select('*')
           .eq('status', 'active')
           .order('date', { ascending: false })
-          .limit(1),
+          .limit(20),
         supabase
           .from('sessions')
           .select('*')
@@ -311,21 +314,32 @@ export function useWorkoutData({
       //     archiveLocalSession only writes its sets back if the server has
       //     no row for it at all.
       if (!activeRes.error) {
-        const serverActive = activeRes.data?.[0] ? mapSessionRow(activeRes.data[0]) : null
+        const [newestRow, ...extraRows] = activeRes.data ?? []
+        const serverActive = newestRow ? mapSessionRow(newestRow) : null
+        const recordRescued = ({ error, saved }) => {
+          logSupabaseError(error)
+          if (saved) {
+            setHistory((prev) => (prev.some((s) => s.id === saved.id) ? prev : [saved, ...prev]))
+            toast(tRef.current('wtStaleSessionSaved'))
+          }
+        }
+
         if (!localActive) {
           setActiveSession((current) => current ?? serverActive)
         } else if (serverActive && serverActive.id !== localActive.id) {
           setActiveSession((current) => (current?.id === localActive.id ? serverActive : current))
           setActiveExerciseId(null)
           toast(tRef.current('wtResumedFromServer'))
-          archiveLocalSession(localActive, userId, writeMutation).then(({ error, saved }) => {
-            logSupabaseError(error)
-            if (saved) {
-              setHistory((prev) => (prev.some((s) => s.id === saved.id) ? prev : [saved, ...prev]))
-              toast(tRef.current('wtStaleSessionSaved'))
-            }
-          })
+          archiveLocalSession(localActive, userId, writeMutation).then(recordRescued)
         }
+
+        // Self-heal duplicate active rows (index missing on the server —
+        // it has happened): the newest stays the live one, every older
+        // one is closed the way finish would. Without this each Cancel
+        // just revealed the next duplicate on the following boot.
+        extraRows.forEach((row) => {
+          closeStaleServerSession(row, writeMutation).then(recordRescued)
+        })
       }
 
       const failures = [routinesRes.error, activeRes.error, historyRes.error].filter(Boolean)
