@@ -5,6 +5,7 @@ import { useAuth } from './hooks/useAuth'
 import { useNetworkStatus } from './hooks/useNetworkStatus'
 import { useMutationQueue } from './hooks/useMutationQueue'
 import { useRestTimer } from './hooks/useRestTimer'
+import { useAppVersion } from './hooks/useAppVersion'
 import { useWorkoutData } from './hooks/useWorkoutData'
 import { useProgressChart } from './hooks/useProgressChart'
 import { useAiCoach } from './hooks/useAiCoach'
@@ -49,7 +50,7 @@ const toastOptions = {
 // post-logout redirect, and that hook only works on a descendant of
 // <BrowserRouter> — App itself is the one that renders the router, so it
 // can't call the hook directly.
-function Dashboard({ user, logout, workout, timer, isOnline, aiCoach }) {
+function Dashboard({ user, logout, workout, timer, isOnline, aiCoach, appVersion }) {
   const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState('workout') // 'workout' | 'history' | 'coach'
   const progressChart = useProgressChart(workout.history)
@@ -94,6 +95,7 @@ function Dashboard({ user, logout, workout, timer, isOnline, aiCoach }) {
         </Suspense>
       ) : (
         <WorkoutTab
+          appVersion={appVersion}
           workout={workout}
           timer={timer}
           user={user}
@@ -131,6 +133,9 @@ function App() {
     clearQueue,
   })
   const aiCoach = useAiCoach()
+  // Called once here (not inside the badges) so the app makes a single
+  // GitHub request per hour, whichever screens are mounted.
+  const appVersion = useAppVersion()
 
   const toaster = (
     <Toaster
@@ -154,7 +159,7 @@ function App() {
     <BrowserRouter>
       {toaster}
       <Routes>
-        <Route path="/" element={user ? <Navigate to="/dashboard" replace /> : <LandingPage />} />
+        <Route path="/" element={user ? <Navigate to="/dashboard" replace /> : <LandingPage appVersion={appVersion.version} />} />
         <Route path="/auth" element={user ? <Navigate to="/dashboard" replace /> : <AuthScreen />} />
         <Route
           path="/dashboard"
@@ -167,6 +172,7 @@ function App() {
                 timer={timer}
                 isOnline={isOnline}
                 aiCoach={aiCoach}
+                appVersion={appVersion.version}
               />
             ) : (
               <Navigate to="/" replace />

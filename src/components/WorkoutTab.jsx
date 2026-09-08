@@ -107,6 +107,7 @@ export default function WorkoutTab({
   isOnline,
   activeTab,
   onTabChange,
+  appVersion,
 }) {
   const { t, dir, language } = useLanguage()
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
@@ -229,7 +230,7 @@ export default function WorkoutTab({
                 className="h-8 w-8 rounded-xl object-contain shadow-sm"
               />
               <h1 className="text-2xl font-bold">{t('common')}</h1>
-              <VersionBadge className="mt-1" />
+              <VersionBadge version={appVersion} className="mt-1" />
             </div>
             {headerActions}
           </header>

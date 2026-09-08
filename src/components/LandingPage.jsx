@@ -4,6 +4,7 @@ import Icon from './Icon'
 import ThemeToggle from './ThemeToggle'
 import LanguageToggle from './LanguageToggle'
 import SocialFooter from './SocialFooter'
+import VersionBadge from './VersionBadge'
 import { useLanguage } from '../context/LanguageContext'
 
 // Marketing/landing page shown on the custom domain's root, before the user
@@ -15,7 +16,7 @@ import { useLanguage } from '../context/LanguageContext'
 // [data-ctp-theme] attribute ThemeProvider sets on <html> (see
 // context/ThemeContext.jsx) — the palette button in the header is
 // <ThemeToggle />, shared with AuthScreen and the main app.
-export default function LandingPage() {
+export default function LandingPage({ appVersion }) {
   const navigate = useNavigate()
   const { t } = useLanguage()
   const [installPrompt, setInstallPrompt] = useState(null)
@@ -48,8 +49,11 @@ export default function LandingPage() {
 
   return (
     <div className="relative flex min-h-screen flex-col overflow-hidden bg-[rgb(var(--ctp-base))] text-[rgb(var(--ctp-text))] transition-colors duration-300">
-      <header className="sticky top-0 z-20 flex items-center justify-between border-b border-[rgb(var(--ctp-surface0))] bg-[rgb(var(--ctp-base)/0.7)] px-5 py-4 backdrop-blur-md">
-        <div className="flex min-w-0 items-center gap-2">
+      {/* Three-column grid (1fr / auto / 1fr) rather than justify-between:
+          the two side groups differ in width, and the version capsule has
+          to sit at the exact horizontal centre of the header regardless. */}
+      <header className="sticky top-0 z-20 grid grid-cols-[1fr_auto_1fr] items-center gap-3 border-b border-[rgb(var(--ctp-surface0))] bg-[rgb(var(--ctp-base)/0.7)] px-5 py-4 backdrop-blur-md">
+        <div className="flex min-w-0 items-center gap-2 justify-self-start">
           <img
             src="/pwa-192x192.png"
             alt="Gymbro Logo"
@@ -59,7 +63,9 @@ export default function LandingPage() {
           <LanguageToggle className="shrink-0" />
         </div>
 
-        <div className="flex shrink-0 items-center gap-2">
+        <VersionBadge version={appVersion} tone="neutral" className="justify-self-center" />
+
+        <div className="flex shrink-0 items-center gap-2 justify-self-end">
           <ThemeToggle />
           <button
             type="button"
