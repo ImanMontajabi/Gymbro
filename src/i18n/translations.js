@@ -56,6 +56,8 @@ export const translations = {
   settingsTitle: { fa: 'تنظیمات', en: 'Settings', ar: 'الإعدادات' },
   appVersion: { fa: 'نسخه برنامه', en: 'App version', ar: 'إصدار التطبيق' },
   settingsLanguage: { fa: 'زبان', en: 'Language', ar: 'اللغة' },
+  settingsTheme: { fa: 'تم', en: 'Theme', ar: 'المظهر' },
+  themeChange: { fa: 'تغییر تم', en: 'Change theme', ar: 'تغيير المظهر' },
   settingsClearData: { fa: 'پاک کردن تمام اطلاعات', en: 'Clear All Data', ar: 'حذف جميع البيانات' },
   settingsLogout: { fa: 'خروج', en: 'Log Out', ar: 'تسجيل الخروج' },
 

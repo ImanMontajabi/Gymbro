@@ -1,10 +1,11 @@
 import Icon from './Icon'
 import SocialFooter from './SocialFooter'
 import LanguageToggle from './LanguageToggle'
+import ThemeSwitcher from './ThemeSwitcher'
 import { useLanguage } from '../context/LanguageContext'
 
 // Settings popup — centered modal with a dimmed, blurred backdrop. Houses
-// the language switch, the destructive "Clear All Data" action, and
+// the language switch, the theme picker, the destructive "Clear All Data" action, and
 // sign-out, kept out of the main header so they can't be tapped by accident.
 export default function SettingsModal({ onClose, onClearData, onLogout, userEmail }) {
   const { t } = useLanguage()
@@ -40,6 +41,13 @@ export default function SettingsModal({ onClose, onClearData, onLogout, userEmai
             {t('settingsLanguage')}
           </span>
           <LanguageToggle />
+        </div>
+
+        <div className="mb-4 rounded-xl border border-[rgb(var(--ctp-surface1)/0.6)] bg-[rgb(var(--ctp-mantle))] px-4 py-3">
+          <span className="mb-3 block text-sm font-bold text-[rgb(var(--ctp-text))]">
+            {t('settingsTheme')}
+          </span>
+          <ThemeSwitcher />
         </div>
 
         <div className="flex flex-col gap-3">

@@ -1,49 +1,14 @@
-import { createContext, useContext, useEffect, useState } from 'react'
-
-export const CTP_THEMES = ['latte', 'frappe', 'macchiato', 'mocha']
-
-// Base hex per flavor — kept separate from the RGB-triplet CSS variables in
-// index.css because the <meta name="theme-color"> tag needs a real color
-// value, not something a CSS var can resolve for us.
-const CTP_BASE_HEX = {
-  latte: '#eff1f5',
-  frappe: '#303446',
-  macchiato: '#24273a',
-  mocha: '#1e1e2e',
-}
+import { createContext, useContext } from 'react'
+import { useThemeManager } from '../hooks/useTheme'
 
 const ThemeContext = createContext(null)
 
-// Global Catppuccin theme: sets `data-ctp-theme` on <html> so the --ctp-*
-// variables in index.css cascade to the whole document (landing page, auth
-// screen, and the main app alike), and keeps the mobile status-bar color
-// (<meta name="theme-color">) in sync so it never shows as a mismatched
-// black/white bar against the themed page.
+// Global theme: the actual work (data-theme attribute, `dark` class, status
+// bar color, localStorage) happens in hooks/useTheme.js; this provider just
+// mounts it once so every ThemeMenu / ThemeSwitcher shares the same state.
 export function ThemeProvider({ children }) {
-  const [theme, setTheme] = useState('mocha')
-
-  useEffect(() => {
-    document.documentElement.setAttribute('data-ctp-theme', theme)
-    // Tailwind's `dark` class has no direct equivalent to our --ctp-*
-    // variables, but a couple of things still key off it (namely
-    // @tailwindcss/typography's `prose-invert`, used for the AI coach's
-    // markdown output) — kept in sync with whether the active flavor is
-    // light (Latte) or dark (everything else) rather than toggled manually.
-    document.documentElement.classList.toggle('dark', theme !== 'latte')
-    const meta = document.getElementById('theme-color-meta')
-    if (meta) meta.setAttribute('content', CTP_BASE_HEX[theme])
-  }, [theme])
-
-  function shuffleTheme() {
-    const options = CTP_THEMES.filter((t) => t !== theme)
-    setTheme(options[Math.floor(Math.random() * options.length)])
-  }
-
-  return (
-    <ThemeContext.Provider value={{ theme, setTheme, shuffleTheme }}>
-      {children}
-    </ThemeContext.Provider>
-  )
+  const value = useThemeManager()
+  return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>
 }
 
 export function useTheme() {

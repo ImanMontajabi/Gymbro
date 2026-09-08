@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../supabase'
 import Icon from './Icon'
-import ThemeToggle from './ThemeToggle'
+import ThemeMenu from './ThemeMenu'
 import { useLanguage } from '../context/LanguageContext'
 
 // Maps common Supabase auth error messages to Persian. Falls back to the
@@ -73,8 +73,8 @@ export default function AuthScreen() {
 
   return (
     <div className="relative flex min-h-screen items-center justify-center bg-[rgb(var(--ctp-base))] px-4 text-[rgb(var(--ctp-text))]">
-      <div className="absolute top-[max(1rem,env(safe-area-inset-top))] right-4">
-        <ThemeToggle />
+      <div className="absolute end-4 top-[max(1rem,env(safe-area-inset-top))]">
+        <ThemeMenu />
       </div>
       <div className="w-full max-w-sm rounded-2xl border border-[rgb(var(--ctp-surface1)/0.4)] bg-[rgb(var(--ctp-surface0))] p-6 shadow-md shadow-black/10">
         <button

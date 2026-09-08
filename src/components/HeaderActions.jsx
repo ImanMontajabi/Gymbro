@@ -1,13 +1,12 @@
 import Icon from './Icon'
-import ThemeToggle from './ThemeToggle'
+import ThemeMenu from './ThemeMenu'
 import { useLanguage } from '../context/LanguageContext'
 
-// The theme toggle + settings-gear pair shown in every screen's header —
+// The theme menu + settings-gear pair shown in every screen's header —
 // was duplicated inline three times in the original monolith; now one
 // component. `isOnline` shows a small warning badge before the buttons when
-// the device has no connection (see useNetworkStatus). Light/dark used to be
-// a separate manual toggle here; Catppuccin flavors now cover that (Latte is
-// the light flavor), so ThemeToggle is the only theme control left.
+// the device has no connection (see useNetworkStatus). ThemeMenu opens the
+// same theme grid as Settings, so the palette is one tap away everywhere.
 export default function HeaderActions({ onOpenSettings, isOnline = true }) {
   const { t } = useLanguage()
   return (
@@ -18,7 +17,7 @@ export default function HeaderActions({ onOpenSettings, isOnline = true }) {
           {t('headerOffline')}
         </span>
       )}
-      <ThemeToggle />
+      <ThemeMenu />
       <button
         type="button"
         onClick={onOpenSettings}

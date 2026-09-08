@@ -1,7 +1,7 @@
 import { useLanguage } from '../context/LanguageContext'
 import { LANGUAGE_LABEL } from '../i18n/translations'
 
-// Cycles fa → en → ar → fa on tap, same interaction pattern as ThemeToggle's
+// Cycles fa → en → ar → fa on tap, same interaction pattern as the old
 // palette shuffle. Shows the *current* language's own short code in its own
 // script (not the language it would switch to), so the label itself always
 // reads correctly regardless of which language is active.

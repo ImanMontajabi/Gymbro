@@ -14,12 +14,12 @@ body {
    region and the bottom home-indicator safe area — #root is included
    because Safari can paint the safe-area insets from whichever element
    is actually laid out edge-to-edge, not just html/body.
-   --ctp-base is a space-separated RGB triplet (see the Catppuccin block
+   --color-base is a space-separated RGB triplet (see the theme palettes
    below), hence the rgb(...) wrapper rather than using the variable bare. */
 html,
 body,
 #root {
-  background-color: rgb(var(--ctp-base));
+  background-color: rgb(var(--color-base));
   min-height: 100dvh;
   width: 100%;
   transition: background-color 0.3s ease;
@@ -33,67 +33,151 @@ body,
     'opsz' 24;
 }
 
-/* Catppuccin palette variables, scoped to whichever flavor the landing page
-   currently has set via [data-ctp-theme] on its root element (see
-   LandingPage.jsx). Values are space-separated RGB triplets — not hex or
-   comma-separated rgb() — so Tailwind's `rgb(var(--ctp-x)/<alpha>)`
-   arbitrary-value syntax can apply opacity to them. Official palette:
-   https://catppuccin.com/palette */
+/* ---------------------------------------------------------------------------
+   Theme palettes
+   ---------------------------------------------------------------------------
+   Every theme defines the same set of semantic tokens as space-separated RGB
+   triplets (not hex, not comma rgb()) so Tailwind can apply opacity to them:
+   both the `bg-surface0/50` utilities from tailwind.config.js and the older
+   `bg-[rgb(var(--ctp-surface0)/0.5)]` arbitrary values resolve to
+   `rgb(r g b / a)`.
+
+   The active theme is chosen by `data-theme` on <html> — set before first
+   paint by the inline script in index.html, then owned by hooks/useTheme.js.
+   Because the selectors are plain attribute selectors, `data-theme` also
+   works on any element: ThemeSwitcher puts it on each preview card so the
+   card renders in its own palette while the rest of the page keeps the
+   active one.
+
+   Tokens:
+     base / mantle          page background / inset (inputs, wells)
+     surface0 / surface1    cards / borders, hover fills
+     text / subtext0        primary / muted text
+     primary                accent (focus rings, icons, selected state)
+     info                   secondary accent (blue)
+     success / warning / danger
+
+   The `--ctp-*` names the components were written against are kept as
+   aliases of these tokens (see the :root block after the palettes), so no
+   class names had to change when the app stopped being Catppuccin-only. */
+
+/* 1. Catppuccin (Mocha) — default; also the fallback when data-theme is
+      missing or unknown. https://catppuccin.com/palette */
 :root,
-[data-ctp-theme='mocha'] {
-  --ctp-base: 30 30 46;
-  --ctp-mantle: 24 24 37;
-  --ctp-surface0: 49 50 68;
-  --ctp-surface1: 69 71 90;
-  --ctp-text: 205 214 244;
-  --ctp-subtext0: 166 173 200;
-  --ctp-mauve: 203 166 247;
-  --ctp-blue: 137 180 250;
-  --ctp-green: 166 227 161;
-  --ctp-yellow: 249 226 175;
-  --ctp-red: 243 139 168;
+[data-theme='catppuccin'] {
+  color-scheme: dark;
+  --color-base: 30 30 46;
+  --color-mantle: 24 24 37;
+  --color-surface0: 49 50 68;
+  --color-surface1: 69 71 90;
+  --color-text: 205 214 244;
+  --color-subtext0: 166 173 200;
+  --color-primary: 203 166 247;
+  --color-info: 137 180 250;
+  --color-success: 166 227 161;
+  --color-warning: 249 226 175;
+  --color-danger: 243 139 168;
 }
 
-[data-ctp-theme='latte'] {
-  --ctp-base: 239 241 245;
-  --ctp-mantle: 230 233 239;
-  --ctp-surface0: 204 208 218;
-  --ctp-surface1: 188 192 204;
-  --ctp-text: 76 79 105;
-  --ctp-subtext0: 108 111 133;
-  --ctp-mauve: 136 57 239;
-  --ctp-blue: 30 102 245;
-  --ctp-green: 64 160 43;
-  --ctp-yellow: 223 142 29;
-  --ctp-red: 210 15 57;
+/* 2. Dracula — https://draculatheme.com/contribute */
+[data-theme='dracula'] {
+  color-scheme: dark;
+  --color-base: 40 42 54;
+  --color-mantle: 33 34 44;
+  --color-surface0: 68 71 90;
+  --color-surface1: 90 94 122;
+  --color-text: 248 248 242;
+  --color-subtext0: 173 181 203;
+  --color-primary: 189 147 249;
+  --color-info: 139 233 253;
+  --color-success: 80 250 123;
+  --color-warning: 241 250 140;
+  --color-danger: 255 85 85;
 }
 
-[data-ctp-theme='frappe'] {
-  --ctp-base: 48 52 70;
-  --ctp-mantle: 41 44 60;
-  --ctp-surface0: 65 69 89;
-  --ctp-surface1: 81 87 109;
-  --ctp-text: 198 208 245;
-  --ctp-subtext0: 165 173 206;
-  --ctp-mauve: 202 158 230;
-  --ctp-blue: 140 170 238;
-  --ctp-green: 166 209 137;
-  --ctp-yellow: 229 200 144;
-  --ctp-red: 231 130 132;
+/* 3. Tokyo Night — https://github.com/enkia/tokyo-night-vscode-theme */
+[data-theme='tokyo-night'] {
+  color-scheme: dark;
+  --color-base: 26 27 38;
+  --color-mantle: 22 22 30;
+  --color-surface0: 36 40 59;
+  --color-surface1: 65 72 104;
+  --color-text: 192 202 245;
+  --color-subtext0: 169 177 214;
+  --color-primary: 187 154 247;
+  --color-info: 122 162 247;
+  --color-success: 158 206 106;
+  --color-warning: 224 175 104;
+  --color-danger: 247 118 142;
 }
 
-[data-ctp-theme='macchiato'] {
-  --ctp-base: 36 39 58;
-  --ctp-mantle: 30 32 48;
-  --ctp-surface0: 54 58 79;
-  --ctp-surface1: 73 77 100;
-  --ctp-text: 202 211 245;
-  --ctp-subtext0: 147 154 183;
-  --ctp-mauve: 198 160 246;
-  --ctp-blue: 138 173 244;
-  --ctp-green: 166 218 149;
-  --ctp-yellow: 238 212 159;
-  --ctp-red: 237 135 150;
+/* 4. Nord — https://www.nordtheme.com/docs/colors-and-palettes */
+[data-theme='nord'] {
+  color-scheme: dark;
+  --color-base: 46 52 64;
+  --color-mantle: 38 43 53;
+  --color-surface0: 59 66 82;
+  --color-surface1: 76 86 106;
+  --color-text: 236 239 244;
+  --color-subtext0: 185 194 209;
+  --color-primary: 180 142 173;
+  --color-info: 136 192 208;
+  --color-success: 163 190 140;
+  --color-warning: 235 203 139;
+  --color-danger: 191 97 106;
+}
+
+/* 5. Rosé Pine — https://rosepinetheme.com/palette
+      (no green in the palette: success uses the lighter Dawn pine) */
+[data-theme='rose-pine'] {
+  color-scheme: dark;
+  --color-base: 25 23 36;
+  --color-mantle: 20 18 30;
+  --color-surface0: 38 35 58;
+  --color-surface1: 64 61 82;
+  --color-text: 224 222 244;
+  --color-subtext0: 144 140 170;
+  --color-primary: 196 167 231;
+  --color-info: 156 207 216;
+  --color-success: 86 148 159;
+  --color-warning: 246 193 119;
+  --color-danger: 235 111 146;
+}
+
+/* 6. Gruvbox (dark, medium) — https://github.com/morhetz/gruvbox
+      (primary is the signature orange rather than purple) */
+[data-theme='gruvbox'] {
+  color-scheme: dark;
+  --color-base: 40 40 40;
+  --color-mantle: 29 32 33;
+  --color-surface0: 60 56 54;
+  --color-surface1: 80 73 69;
+  --color-text: 235 219 178;
+  --color-subtext0: 168 153 132;
+  --color-primary: 254 128 25;
+  --color-info: 131 165 152;
+  --color-success: 184 187 38;
+  --color-warning: 250 189 47;
+  --color-danger: 251 73 52;
+}
+
+/* Legacy aliases: the components (and recharts/date-picker styling) were
+   written as rgb(var(--ctp-x)). Resolved at computed-value time, so they
+   always follow whichever theme block is active on the element. New code
+   should use the Tailwind color names (bg-surface0, text-primary, ...). */
+:root,
+[data-theme] {
+  --ctp-base: var(--color-base);
+  --ctp-mantle: var(--color-mantle);
+  --ctp-surface0: var(--color-surface0);
+  --ctp-surface1: var(--color-surface1);
+  --ctp-text: var(--color-text);
+  --ctp-subtext0: var(--color-subtext0);
+  --ctp-mauve: var(--color-primary);
+  --ctp-blue: var(--color-info);
+  --ctp-green: var(--color-success);
+  --ctp-yellow: var(--color-warning);
+  --ctp-red: var(--color-danger);
 }
 
 /* Entrance micro-animations for newly-mounted rows/cards/modals — gives
@@ -170,7 +254,7 @@ body,
 }
 
 /* Recolors react-multi-date-picker's popup calendar (used for the export
-   date range in HistoryTab.jsx) to follow the active Catppuccin flavor.
+   date range in HistoryTab.jsx) to follow the active theme.
    The library injects its own default (non-Catppuccin) colors at runtime,
    so these rules override its .rmdp-* classes by selector specificity
    rather than by CSS variables the library itself reads — it has no such
@@ -183,8 +267,8 @@ body,
 
 .ctp-datepicker.rmdp-calendar,
 .ctp-datepicker .rmdp-calendar {
-  background-color: rgb(var(--ctp-surface0));
-  color: rgb(var(--ctp-text));
+  background-color: rgb(var(--color-surface0));
+  color: rgb(var(--color-text));
   padding: 0.75rem;
 }
 
@@ -203,52 +287,52 @@ body,
    here. */
 .ctp-datepicker .rmdp-month-picker,
 .ctp-datepicker .rmdp-year-picker {
-  background-color: rgb(var(--ctp-surface0));
+  background-color: rgb(var(--color-surface0));
 }
 
 .ctp-datepicker .rmdp-header-values,
 .ctp-datepicker .rmdp-week-day {
-  color: rgb(var(--ctp-text));
+  color: rgb(var(--color-text));
 }
 
 .ctp-datepicker .rmdp-arrow {
-  border-color: rgb(var(--ctp-subtext0));
+  border-color: rgb(var(--color-subtext0));
 }
 
 .ctp-datepicker .rmdp-arrow-container:hover {
-  background-color: rgb(var(--ctp-surface1));
+  background-color: rgb(var(--color-surface1));
   box-shadow: none;
 }
 
 .ctp-datepicker .rmdp-day span {
-  color: rgb(var(--ctp-text));
+  color: rgb(var(--color-text));
 }
 
 .ctp-datepicker .rmdp-day.rmdp-deactive span,
 .ctp-datepicker .rmdp-day-hidden span {
-  color: rgb(var(--ctp-subtext0) / 0.4);
+  color: rgb(var(--color-subtext0) / 0.4);
 }
 
 .ctp-datepicker .rmdp-day:not(.rmdp-disabled):not(.rmdp-day-hidden) span:hover {
-  background-color: rgb(var(--ctp-surface1));
+  background-color: rgb(var(--color-surface1));
 }
 
 .ctp-datepicker .rmdp-day.rmdp-today span {
-  background-color: rgb(var(--ctp-surface1));
-  color: rgb(var(--ctp-text));
+  background-color: rgb(var(--color-surface1));
+  color: rgb(var(--color-text));
   box-shadow: none;
 }
 
-/* !important guarantees mauve wins even for the current day/month/year cell,
+/* !important guarantees the accent wins even for the current day/month/year cell,
    which carries both .rmdp-today and .rmdp-selected — selected already wins
    on specificity alone, but this removes any doubt for that overlap case. */
 .ctp-datepicker .rmdp-day.rmdp-selected span:not(.highlight) {
-  background-color: rgb(var(--ctp-mauve)) !important;
-  color: rgb(var(--ctp-base)) !important;
+  background-color: rgb(var(--color-primary)) !important;
+  color: rgb(var(--color-base)) !important;
   box-shadow: none;
 }
 
 .ctp-datepicker .rmdp-day.rmdp-range {
-  background-color: rgb(var(--ctp-mauve) / 0.25);
+  background-color: rgb(var(--color-primary) / 0.25);
   box-shadow: none;
 }

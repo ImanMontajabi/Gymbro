@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Icon from './Icon'
-import ThemeToggle from './ThemeToggle'
+import ThemeMenu from './ThemeMenu'
 import LanguageToggle from './LanguageToggle'
 import SocialFooter from './SocialFooter'
 import VersionBadge from './VersionBadge'
@@ -11,11 +11,10 @@ import { useLanguage } from '../context/LanguageContext'
 // enters the actual app (AuthScreen). Both non-install CTAs navigate to
 // /auth once the user is ready to proceed — install is a bonus, not a gate.
 //
-// Colors come from Catppuccin (https://catppuccin.com/palette) via the
-// --ctp-* CSS variables defined in index.css, driven by the global
-// [data-ctp-theme] attribute ThemeProvider sets on <html> (see
-// context/ThemeContext.jsx) — the palette button in the header is
-// <ThemeToggle />, shared with AuthScreen and the main app.
+// Colors come from the active theme's CSS variables in index.css, driven by
+// the global [data-theme] attribute hooks/useTheme.js sets on <html> — the
+// palette button in the header is <ThemeMenu />, shared with AuthScreen and
+// the main app.
 export default function LandingPage({ appVersion }) {
   const navigate = useNavigate()
   const { t } = useLanguage()
@@ -66,7 +65,7 @@ export default function LandingPage({ appVersion }) {
         <VersionBadge version={appVersion} tone="neutral" className="justify-self-center" />
 
         <div className="flex shrink-0 items-center gap-2 justify-self-end">
-          <ThemeToggle />
+          <ThemeMenu />
           <button
             type="button"
             onClick={() => navigate('/auth')}

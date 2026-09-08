@@ -5,11 +5,23 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>جیم برو</title>
 
+    <!-- Theme: applied before first paint so a saved Dracula/Nord/... choice
+         never flashes the default palette on load. Must use the same
+         localStorage key as src/themes.js (THEME_STORAGE_KEY). An unknown
+         value is harmless — the CSS falls back to the :root (Catppuccin)
+         palette and hooks/useTheme.js normalizes it after mount. -->
+    <script>
+      try {
+        var gymbroTheme = localStorage.getItem('gymbro_theme')
+        if (gymbroTheme) document.documentElement.setAttribute('data-theme', gymbroTheme)
+      } catch (e) {}
+    </script>
+
     <!-- PWA: theme color for the browser UI/status bar (Android + desktop
          Chrome, and Mobile Safari's top toolbar since iOS 15). Default
-         matches the Mocha Catppuccin flavor's Base color; ThemeContext.jsx
-         overwrites this tag's `content` at runtime whenever the active
-         flavor changes, targeting it by id. -->
+         matches the Catppuccin base color; hooks/useTheme.js overwrites
+         this tag's `content` at runtime whenever the theme changes,
+         targeting it by id. -->
     <meta name="theme-color" id="theme-color-meta" content="#1e1e2e" />
 
     <!-- Favicon -->

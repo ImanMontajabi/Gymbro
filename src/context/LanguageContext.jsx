@@ -14,8 +14,8 @@ function loadStoredLanguage() {
   }
 }
 
-// Global language: sets `lang`/`dir` on <html> (mirrors ThemeContext's
-// `data-ctp-theme` pattern) so the browser's own text direction, form
+// Global language: sets `lang`/`dir` on <html> (mirrors useTheme's
+// `data-theme` pattern) so the browser's own text direction, form
 // controls, and native date/number formatting all follow the active
 // language, not just the strings this app renders itself. `t(key)` is the
 // only thing components need — it always resolves against the current
