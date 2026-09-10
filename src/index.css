@@ -161,6 +161,24 @@ body,
   --color-danger: 251 73 52;
 }
 
+/* 7. Catppuccin Latte — the light flavor. `color-scheme: light` flips
+      native form controls and scrollbars too; hooks/useTheme.js drops
+      Tailwind's `dark` class for it (see `isDark` in src/themes.js). */
+[data-theme='catppuccin-latte'] {
+  color-scheme: light;
+  --color-base: 239 241 245;
+  --color-mantle: 230 233 239;
+  --color-surface0: 204 208 218;
+  --color-surface1: 188 192 204;
+  --color-text: 76 79 105;
+  --color-subtext0: 108 111 133;
+  --color-primary: 136 57 239;
+  --color-info: 30 102 245;
+  --color-success: 64 160 43;
+  --color-warning: 223 142 29;
+  --color-danger: 210 15 57;
+}
+
 /* Legacy aliases: the components (and recharts/date-picker styling) were
    written as rgb(var(--ctp-x)). Resolved at computed-value time, so they
    always follow whichever theme block is active on the element. New code

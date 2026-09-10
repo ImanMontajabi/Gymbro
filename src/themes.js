@@ -12,6 +12,7 @@ export const THEMES = [
   { id: 'nord', name: 'Nord', isDark: true },
   { id: 'rose-pine', name: 'Rosé Pine', isDark: true },
   { id: 'gruvbox', name: 'Gruvbox', isDark: true },
+  { id: 'catppuccin-latte', name: 'Catppuccin Latte', isDark: false },
 ]
 
 export const DEFAULT_THEME_ID = 'catppuccin'

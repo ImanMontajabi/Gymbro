@@ -48,11 +48,8 @@ export default function LandingPage({ appVersion }) {
 
   return (
     <div className="relative flex min-h-screen flex-col overflow-hidden bg-[rgb(var(--ctp-base))] text-[rgb(var(--ctp-text))] transition-colors duration-300">
-      {/* Three-column grid (1fr / auto / 1fr) rather than justify-between:
-          the two side groups differ in width, and the version capsule has
-          to sit at the exact horizontal centre of the header regardless. */}
-      <header className="sticky top-0 z-20 grid grid-cols-[1fr_auto_1fr] items-center gap-3 border-b border-[rgb(var(--ctp-surface0))] bg-[rgb(var(--ctp-base)/0.7)] px-5 py-4 backdrop-blur-md">
-        <div className="flex min-w-0 items-center gap-2 justify-self-start">
+      <header className="sticky top-0 z-20 flex items-center justify-between gap-3 border-b border-[rgb(var(--ctp-surface0))] bg-[rgb(var(--ctp-base)/0.7)] px-5 py-4 backdrop-blur-md">
+        <div className="flex min-w-0 items-center gap-2">
           <img
             src="/pwa-192x192.png"
             alt="Gymbro Logo"
@@ -62,9 +59,7 @@ export default function LandingPage({ appVersion }) {
           <LanguageToggle className="shrink-0" />
         </div>
 
-        <VersionBadge version={appVersion} tone="neutral" className="justify-self-center" />
-
-        <div className="flex shrink-0 items-center gap-2 justify-self-end">
+        <div className="flex shrink-0 items-center gap-2">
           <ThemeMenu />
           <button
             type="button"
@@ -84,7 +79,11 @@ export default function LandingPage({ appVersion }) {
           {t('landingSubtitle')}
         </p>
 
-        <div className="mt-8 flex w-full items-center justify-center gap-3">
+        {/* <main> is a centred flex column, so the capsule sits on the hero's
+            axis without any extra wrapper; the header stays uncluttered. */}
+        <VersionBadge version={appVersion} tone="neutral" className="mt-5" />
+
+        <div className="mt-6 flex w-full items-center justify-center gap-3">
           <button
             type="button"
             onClick={handleInstallClick}
